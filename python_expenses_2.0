@@ -1,0 +1,199 @@
+from tkinter import *
+from tkinter import messagebox
+import sqlite3
+
+conn = sqlite3.connect('Expense Tracker.db')
+cursor = conn.cursor()
+
+# Create a user table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )
+''')
+
+# Commit changes and close the connection
+conn.commit()
+conn.close()
+
+
+def user_login():
+    entered_username = user_entry.get()
+    entered_password = password_entry.get()
+
+    if entered_username and entered_password:
+        # Connect to the database
+        conn = sqlite3.connect('Expense Tracker.db')
+        cursor = conn.cursor()
+
+        # Retrieve the stored password for the entered username
+        cursor.execute('SELECT password FROM users WHERE username = ?', (entered_username,))
+        stored_password = cursor.fetchone()
+
+        conn.close()
+
+        if stored_password and stored_password[0] == entered_password:
+            messagebox.showinfo("Login Successful", "Welcome, " + entered_username + "!")
+        else:
+            messagebox.showerror("Login Error", "Invalid username or password.")
+    else:
+        messagebox.showerror("Login Error", "Please enter both a username and password.")
+
+def switch_to_login_page():
+    register_frame.place_forget()
+    login_frame.place(x=480, y=70)
+
+def switch_to_register_page():
+    login_frame.place_forget()
+    register_frame.place(x=480, y=50)
+
+
+def clear_username_entry(event):
+    if user_entry.get() == 'Username':
+        user_entry.delete(0, 'end')
+
+
+def reset_username_entry(event):
+    if user_entry.get() == '':
+        user_entry.insert(0, 'Username')
+
+
+def clear_password_entry(event):
+    if password_entry.get() == 'Password':
+        password_entry.delete(0, 'end')
+        password_entry.config(show='*')
+
+
+def reset_password_entry(event):
+    if password_entry.get() == '':
+        password_entry.config(show='')
+        password_entry.insert(0, 'Password')
+
+
+root = Tk()
+root.title('Expenses Tracker')
+root.geometry('925x500+300+200')
+root.configure(bg="#fff")
+root.resizable(False, False)
+
+img = PhotoImage(file='login.png')
+Label(root, image=img, bg='white').place(x=50, y=50)
+
+login_frame = Frame(root, width=350, height=350, bg="white")
+login_frame.place(x=480, y=70)
+
+heading = Label(login_frame, text='Sign in', fg='#57a1f8', bg='white', font=('Microsoft YaHei UI Light', 23, 'bold'))
+heading.place(x=100, y=5)
+
+user_entry = Entry(login_frame, width=25, fg='black', border=0, bg='white', font=('Microsoft YaHei UI Light', 11))
+user_entry.place(x=30, y=80)
+user_entry.insert(0, 'Username')
+user_entry.bind('<FocusIn>', clear_username_entry)
+user_entry.bind('<FocusOut>', reset_username_entry)
+
+Frame(login_frame, width=295, height=2, bg='black').place(x=25, y=107)
+
+password_entry = Entry(login_frame, width=25, fg='black', border=0, bg="white", font=('Microsoft YaHei UI Light', 11))
+password_entry.place(x=30, y=150)
+password_entry.insert(0, 'Password')
+password_entry.config(show='')
+password_entry.bind('<FocusIn>', clear_password_entry)
+password_entry.bind('<FocusOut>', reset_password_entry)
+
+Frame(login_frame, width=295, height=2, bg='black').place(x=25, y=177)
+
+login_button = Button(login_frame, width=39, pady=7, text='Sign In', bg='#57a1f8', fg='white', border=0, command=user_login)
+login_button.place(x=35, y=204)
+
+label = Label(login_frame, text="Don't have an account?", fg='black', bg='white', font=('Microsoft YaHei UI Light', 9))
+label.place(x=75, y=270)
+
+sign_up = Button(login_frame, width=6, text='Sign Up', border=0, bg='white', cursor='hand2', fg='#57a1f8',command=switch_to_register_page)
+sign_up.place(x=215, y=270)
+
+
+# Image in UI
+img = PhotoImage(file='login.png')
+Label(root, image=img, border=0, bg='white').place(x=50, y=90)
+
+# Frame for signup
+register_frame = Frame(root, width=350, height=390, bg='#fff')
+
+
+heading = Label(register_frame, text='Sign Up', fg='#57a1f8', bg='white', font=('Microsoft YaHei UI light', 23, 'bold'))
+heading.place(x=100, y=5)
+
+
+# Username frame
+def on_enter():
+    user.delete(0, 'end')
+
+
+def on_leave():
+    name = user.get()
+    if user.get() == '':
+        user.insert(0, 'Username')
+
+
+user = Entry(register_frame, width=25, fg='black', border=0, bg='white', font=('Microsoft YaHei UI light', 11))
+user.place(x=30, y=80)
+user.insert(0, 'Username')
+user.bind("<FocusIn>", clear_username_entry)
+user.bind("<FocusOut>", reset_username_entry)
+
+Frame(register_frame, width=295, height=2, bg='black').place(x=25, y=107)
+
+
+# Password frame
+def on_enter():
+    code.delete(0, 'end')
+
+
+def on_leave():
+    name = code.get()
+
+    if code.get() == '':
+        code.insert(0, 'Password')
+
+
+code = Entry(register_frame, width=25, fg='black', border=0, bg='white', font=('Microsoft YaHei UI light', 11))
+code.place(x=30, y=150)
+code.insert(0, 'Password')
+code.bind("<FocusIn>", clear_password_entry)
+code.bind("<FocusOut>", reset_password_entry)
+
+Frame(register_frame, width=295, height=2, bg='black').place(x=25, y=177)
+
+
+# Confirm Password frame
+
+def on_enter():
+    confirm_code.delete(0, 'end')
+
+
+def on_leave():
+    name = confirm_code.get()
+    if confirm_code.get() == '':
+        confirm_code.insert(0, 'Confirm Password')
+
+
+confirm_code = Entry(register_frame, width=25, fg='black', border=0, bg='white', font=('Microsoft YaHei UI light', 11))
+confirm_code.place(x=30, y=220)
+confirm_code.insert(0, 'Password')
+confirm_code.bind("<FocusIn>", clear_password_entry)
+confirm_code.bind("<FocusOut>", reset_password_entry)
+
+Frame(register_frame, width=295, height=2, bg='black').place(x=25, y=247)
+
+# Sign Up Button
+
+Button(register_frame, width=39, pady=7, text='Sign up', bg='#57a1f8', fg='white', border=0).place(x=35, y=280)
+label = Label(register_frame, text='I have an Account', fg='black', bg='white', font=('Microsoft YaHei UI Light', 9))
+label.place(x=90, y=340)
+
+signin = Button(register_frame, width=6, text='Sign In', border=0, bg='white', cursor='hand2', fg='#57a1f8',command=switch_to_login_page)
+signin.place(x=200, y=340)
+
+root.mainloop()
