@@ -99,7 +99,15 @@ def register():
                 conn.close()
     else:
         messagebox.showerror("Registration Error", "Please enter both a username and password.")
-
+def toggle_password_visibility():
+    if show_password_var.get():
+        password_entry.config(show="")
+        register_confirm_password_entry.config(show="")
+        register_username_password_entry.config(show="")
+    else:
+        password_entry.config(show="*")
+        register_confirm_password_entry.config(show="*")
+        register_username_password_entry.config(show="*")
 
 
 root = Tk()
@@ -122,6 +130,11 @@ user_entry.place(x=30, y=80)
 user_entry.insert(0, 'Username')
 user_entry.bind('<FocusIn>', clear_username_entry)
 user_entry.bind('<FocusOut>', reset_username_entry)
+
+show_password_var = BooleanVar()
+show_password_checkbox = Checkbutton(login_frame, text="Show Password", variable=show_password_var,
+                                     command=toggle_password_visibility)
+show_password_checkbox.place(x=150,y=300)
 
 Frame(login_frame, width=295, height=2, bg='black').place(x=25, y=107)
 
@@ -228,5 +241,9 @@ label.place(x=90, y=340)
 
 signin = Button(register_frame, width=6, text='Sign In', border=0, bg='white', cursor='hand2', fg='#57a1f8',command=switch_to_login_page)
 signin.place(x=200, y=340)
+
+show_password_checkbox1 = Checkbutton(register_frame, text="Show Password", variable=show_password_var,
+                                     command=toggle_password_visibility)
+show_password_checkbox1.place(x=140,y=360)
 
 root.mainloop()
