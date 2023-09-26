@@ -17,6 +17,7 @@ cursor.execute('''
 conn.commit()
 conn.close()
 
+
 def toggle_password_visibility():
     if show_password_var.get():
         password_entry.config(show="")
@@ -26,6 +27,7 @@ def toggle_password_visibility():
         password_entry.config(show="*")
         register_confirm_password_entry.config(show="*")
         register_username_password_entry.config(show="*")
+
 
 def user_login():
     entered_username = user_entry.get()
@@ -111,14 +113,16 @@ def register():
 # The Sign Up Page Setup
 root = Tk()
 root.title('Expenses Tracker')
+photo = PhotoImage(file="test.png")
+root.iconphoto(False, photo)
 root.geometry('925x500+300+200')
 root.configure(bg="#fff")
 root.resizable(False, False)
-img = PhotoImage(file='login.png')
+img = PhotoImage(file='Handsome.png')
 Label(root, image=img, bg='white').place(x=50, y=50)
 login_frame = Frame(root, width=350, height=350, bg="white")
 login_frame.place(x=480, y=70)
-heading = Label(login_frame, text='Sign in', fg='#57a1f8', bg='white', font=('Microsoft YaHei UI Light', 23, 'bold'))
+heading = Label(login_frame, text='Sign in', fg='#7d57f8', bg='white', font=('Microsoft YaHei UI Light', 23, 'bold'))
 heading.place(x=100, y=5)
 user_entry = Entry(login_frame, width=25, fg='black', border=0, bg='white', font=('Microsoft YaHei UI Light', 11))
 user_entry.place(x=30, y=80)
@@ -140,21 +144,21 @@ password_entry.config(show='')
 password_entry.bind('<FocusIn>', clear_password_entry)
 password_entry.bind('<FocusOut>', reset_password_entry)
 Frame(login_frame, width=295, height=2, bg='black').place(x=25, y=177)
-login_button = Button(login_frame, width=39, pady=7, text='Sign In', bg='#57a1f8', fg='white', border=0,
+login_button = Button(login_frame, width=39, pady=7, text='Sign In', bg='#7d57f8', fg='white', border=0,
                       command=user_login)
 login_button.place(x=35, y=204)
 label = Label(login_frame, text="Don't have an account?", fg='black', bg='white', font=('Microsoft YaHei UI Light', 9))
 label.place(x=75, y=270)
-sign_up = Button(login_frame, width=6, text='Sign Up', border=0, bg='white', cursor='hand2', fg='#57a1f8',
+sign_up = Button(login_frame, width=6, text='Sign Up', border=0, bg='white', cursor='hand2', fg='#7d57f8',
                  command=switch_to_register_page)
 sign_up.place(x=215, y=270)
 
 # Image in UI
-img = PhotoImage(file='login.png')
+img = PhotoImage(file='Handsome.png')
 Label(root, image=img, border=0, bg='white').place(x=50, y=90)
 # Frame for signup
 register_frame = Frame(root, width=350, height=390, bg='#fff')
-heading = Label(register_frame, text='Sign Up', fg='#57a1f8', bg='white', font=('Microsoft YaHei UI light', 23, 'bold'))
+heading = Label(register_frame, text='Sign Up', fg='#7d57f8', bg='white', font=('Microsoft YaHei UI light', 23, 'bold'))
 heading.place(x=100, y=5)
 
 
@@ -221,17 +225,16 @@ register_confirm_password_entry.bind('<FocusIn>', clear_password2_entry)
 register_confirm_password_entry.bind('<FocusOut>', reset_password2_entry)
 Frame(register_frame, width=295, height=2, bg='black').place(x=25, y=247)
 # Sign Up Button
-Button(register_frame, width=39, pady=7, text='Sign up', bg='#57a1f8', fg='white', border=0, command=register).place(
+Button(register_frame, width=39, pady=7, text='Sign up', bg='#7d57f8', fg='white', border=0, command=register).place(
     x=35, y=280)
 label = Label(register_frame, text='I have an Account', fg='black', bg='white', font=('Microsoft YaHei UI Light', 9))
 label.place(x=90, y=340)
-signin = Button(register_frame, width=6, text='Sign In', border=0, bg='white', cursor='hand2', fg='#57a1f8',
+signin = Button(register_frame, width=6, text='Sign In', border=0, bg='white', cursor='hand2', fg='#7d57f8',
                 command=switch_to_login_page)
 signin.place(x=200, y=340)
 
 show_password_checkbox2 = Checkbutton(register_frame, text="Show Password", variable=show_password_var,
                                       command=toggle_password_visibility)
-show_password_checkbox2.place(x=140, y=360)
+show_password_checkbox2.place(x=80, y=360)
 
 root.mainloop()
-
