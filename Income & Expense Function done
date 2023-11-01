@@ -76,6 +76,22 @@ def list_all_expenses():
         table.insert('', END, values=values)
 
 
+def view_expense_details():
+    global table
+    global date, payee, note, amnt, MoP, cate
+    if not table.selection():
+        mb.showerror('No expense selected', 'Please select an expense from the table to view its details')
+    current_selected_expense = table.item(table.focus())
+    values = current_selected_expense['values']
+    expenditure_date = datetime.date(int(values[1][:4]), int(values[1][5:7]), int(values[1][8:]))
+    date.set_date(expenditure_date)
+    payee.set(values[2])
+    note.set(values[3])
+    amnt.set(values[4])
+    MoP.set(values[5])
+    cate.set(values[6])
+
+
 def selected_expense_to_words():
     global table
 
@@ -94,7 +110,7 @@ def selected_expense_to_words():
 
 
 def remove_expense():
-    if not table.selection():
+    if not table_inc.selection():
         mb.showerror('No record selected!', 'Please select a record to delete!')
         return
 
@@ -111,24 +127,6 @@ def remove_expense():
         list_all_expenses()
         mb.showinfo('Record deleted successfully!',
                     'The record you wanted to delete has been deleted successfully')
-
-
-def remove_all_expenses():
-    surety = mb.askyesno('Are you sure?',
-                         "Are you sure that you want to delete all the expense items from the database?",
-                         icon='warning')
-
-    if surety:
-        table.delete(*table.get_children())
-
-        connector.execute('DELETE FROM Expense')
-        connector.commit()
-
-        clear_fields()
-        list_all_expenses()
-        mb.showinfo('All Expenses deleted', 'All the expenses were successfully deleted')
-    else:
-        mb.showinfo('Ok then', 'The task was aborted and no expense was deleted!')
 
 
 # noinspection PyGlobalUndefined
@@ -166,25 +164,19 @@ def adding_expense():
 def edit_expense():
     global table
 
-    # noinspection PyGlobalUndefined
     def edit_existing_expense():
         global date, amnt, note, payee, MoP, cate
         global connector, table
-
-        current_selected_expense = table.item(table.focus())
-        contents = current_selected_expense['values']
-
+        current_selected_expenditure = table.item(table.focus())
+        contents = current_selected_expenditure['values']
         connector.execute(
-            'UPDATE ExpenseTracker SET Date = ?, Payee = ?, Description = ?, Amount = ?, ModeOfPayment = ?, '
-            'Category = ？WHERE ID= ?',
-            (date.get_date(), payee.get(), note.get(), amnt.get(), MoP.get(), cate.get(), contents[0]))
+            'UPDATE ExpenseTracker SET Date = ?, Payee = ?, Description = ?, Amount = ?,'
+            ' ModeOfPayment = ? WHERE ID = ?',
+            (date.get_date(), payee.get(), cate.get(), amnt.get(), MoP.get(), note.get(), contents[0]))
         connector.commit()
-
         clear_fields()
         list_all_expenses()
-
-        mb.showinfo('Data edited',
-                    'We have updated the data and stored in the database as you wanted')
+        mb.showinfo('Data edited', 'We have updated the data and stored in the database as you wanted')
         edit_btn.destroy()
         return
 
@@ -192,35 +184,36 @@ def edit_expense():
         mb.showerror('No expense selected!',
                      'You have not selected any expense in the table for us to edit; please do that!')
         return
+    view_expense_details()
 
-    edit_btn = Button(master=frame_5, text='Edit expense', font=btn_font, width=30,
-                      bg=hlb_btn_bg, command=edit_existing_expense)
+    edit_btn = Button(master=frame_5, text='Edit expense', font=btn_font, width=30, bg=hlb_btn_bg,
+                      command=edit_existing_expense)
     edit_btn.place(x=10, y=395)
 
 
 # Functions for 'Income' menu
 
 def list_all_income():
-    global connector, table
+    global connector, table_inc
 
-    table.delete(*table.get_children())
+    table_inc.delete(*table_inc.get_children())
 
     all_data = connector.execute('SELECT * FROM Income')
     data = all_data.fetchall()
 
     for values in data:
-        table.insert('', END, values=values)
+        table_inc.insert('', END, values=values)
 
 
 def selected_income_to_words():
-    global table
+    global table_inc
 
-    if not table.selection():
+    if not table_inc.selection():
         mb.showerror('No income selected!',
                      'Please select an income from the table for us to read')
         return
 
-    current_selected_income = table.item(table.focus())
+    current_selected_income = table_inc.item(table_inc.focus())
     values = current_selected_income['values']
 
     message = (f'Your income can be read like: \n"You paid {values[4]} to {values[2]} '
@@ -230,11 +223,11 @@ def selected_income_to_words():
 
 
 def remove_income():
-    if not table.selection():
+    if not table_inc.selection():
         mb.showerror('No record selected!', 'Please select a record to delete!')
         return
 
-    current_selected_income = table.item(table.focus())
+    current_selected_income = table_inc.item(table_inc.focus())
     values_selected = current_selected_income['values']
 
     surety = mb.askyesno('Are you sure?',
@@ -249,38 +242,20 @@ def remove_income():
                     'The record you wanted to delete has been deleted successfully')
 
 
-def remove_all_income():
-    surety = mb.askyesno('Are you sure?',
-                         "Are you sure that you want to delete all the income items from the database?",
-                         icon='warning')
-
-    if surety:
-        table.delete(*table.get_children())
-
-        connector.execute('DELETE FROM Income')
-        connector.commit()
-
-        income_clear_fields()
-        list_all_income()
-        mb.showinfo('All Income deleted', 'All the income were successfully deleted')
-    else:
-        mb.showinfo('Ok then', 'The task was aborted and no income was deleted!')
-
-
 def income_clear_fields():
-    global note_income, payer_income, amnt_income, MoP_income, date_income, table, cate_income
+    global note_income, payer_income, amnt_income, MoP_income, table_inc, date, cate_income
 
     today_date = datetime.datetime.now().date()
 
-    note.set('')
-    payee.set('')
-    amnt.set(0.0)
-    MoP.set('Select Method'), cate.set('Select Method'), date_income.set_date(today_date)
-    table.selection_remove(*table.selection())
+    note_income.set('')
+    payer_income.set('')
+    amnt_income.set(0.0)
+    MoP_income.set('Select Method'), cate_income.set('Select Method'), date.set_date(today_date)
+    table_inc.selection_remove(*table_inc.selection())
 
 
 def adding_income():
-    global note_income, payer_income, amnt_income, MoP_income, date_income, table, cate_income
+    global note_income, payer_income, amnt_income, MoP_income, date, table_inc, cate_income
     global connector
 
     try:
@@ -291,14 +266,14 @@ def adding_income():
         mb.showerror('Inappropriate Value', 'Please enter numbers in the income entry.')
 
     # Check if any of the required fields are empty
-    if (not date_income.get() or not payer_income.get() or not note_income.get() or not amnt_income.get()
+    if (not date.get() or not payer_income.get() or not note_income.get() or not amnt_income.get()
             or not MoP_income.get() or not cate_income.get()):
         mb.showerror('Fields empty!',
                      "Please fill all the missing fields before pressing the add button!")
     else:
         # If all fields are filled, insert the data into the database
         connector.execute('INSERT INTO Income (Date, Payer, Note, Amount, ModeOfPayment, Category) '
-                          'VALUES (?,?,?,?,?,?)', (date_income.get_date(), payer_income.get(),
+                          'VALUES (?,?,?,?,?,?)', (date.get_date(), payer_income.get(),
                                                    note_income.get(), amnt_income.get(), MoP_income.get(),
                                                    cate_income.get()))
         connector.commit()
@@ -314,21 +289,37 @@ def adding_income():
                     'The income whose details you just entered has been added to the database')
 
 
+def view_income_details():
+    global table_inc
+    global date, payer_income, note_income, amnt_income, MoP_income, cate_income
+    if not table_inc.selection():
+        mb.showerror('No expense selected', 'Please select an income from the table to view its details')
+    current_selected_income = table_inc.item(table_inc.focus())
+    values = current_selected_income['values']
+    income_date = datetime.date(int(values[1][:4]), int(values[1][5:7]), int(values[1][8:]))
+    date.set_date(income_date)
+    payer_income.set(values[2])
+    note_income.set(values[3])
+    amnt_income.set(values[4])
+    MoP_income.set(values[5])
+    cate_income.set(values[6])
+
+
 def edit_income():
-    global table
+    global table_inc
 
     # noinspection PyGlobalUndefined
     def edit_existing_income():
-        global note_income, amnt_income, note_income, payer_income, MoP_income, cate_income
-        global connector, table
+        global date, amnt_income, note_income, payer_income, MoP_income, cate_income
+        global connector, table_inc
 
-        current_selected_expense = table.item(table.focus())
-        contents = current_selected_expense['values']
+        current_selected_income = table_inc.item(table_inc.focus())
+        contents = current_selected_income['values']
 
         connector.execute(
             'UPDATE Income SET Date = ?, Payer = ?, Note= ?, Amount = ?, ModeOfPayment = ?, '
             'Category = ？WHERE ID= ?',
-            (date_income.get_date(), payer_income.get(), note_income.get(), amnt_income.get(),
+            (date.get_date(), payer_income.get(), note_income.get(), amnt_income.get(),
              MoP_income.get(), cate_income.get(), contents[0]))
         connector.commit()
 
@@ -340,10 +331,11 @@ def edit_income():
         edit_inc_btn.destroy()
         return
 
-    if not table.selection():
+    if not table_inc.selection():
         mb.showerror('No expense selected!',
                      'You have not selected any income in the table for us to edit; please do that!')
         return
+    view_income_details()
 
     edit_inc_btn = CTkButton(master=frame_8, text='Edit income', width=30, command=edit_existing_income)
     edit_inc_btn.place(x=10, y=395)
@@ -671,8 +663,8 @@ frame_8_1.pack(side='left')
 Date_inc = CTkLabel(master=frame_8_1, text='Date (MM/DD/YY):')
 Date_inc.place(x=10, y=50)
 
-date_inc = DateEntry(master=frame_8_1, date=datetime.datetime.now().date())
-date_inc.place(x=160, y=65)
+date = DateEntry(master=frame_8_1, date=datetime.datetime.now().date())
+date.place(x=160, y=65)
 
 Payer_inc_Label = CTkLabel(master=frame_8_1, text='Payee : ')
 Payer_inc_Label.place(x=10, y=260)
@@ -730,7 +722,7 @@ table_inc.place(relx=0, y=0, relheight=1, relwidth=1)
 
 list_all_income()
 
-# Let Home Menu appear first
+# Let the Home Menu appear first
 mainframe2.pack_forget()
 
 mainframe3.pack_forget()
