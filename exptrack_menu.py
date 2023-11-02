@@ -228,7 +228,7 @@ mainframe1.pack(fill='both', side='right', expand='true')
 # Frame 1 (invisible)
 
 frame_1 = CTkFrame(master=mainframe1, fg_color="#000000", height=150)
-frame_1.pack(fill='x', padx=2, pady=2)
+frame_1.pack(fill='x', padx=10, pady=10)
 
 frame_1_1 = CTkFrame(master=frame_1, height=150)
 frame_1_1.pack(fill='x')
@@ -245,7 +245,7 @@ moneycounter.place(relx=0.02, rely=0.5)
 # Frame 2 (invisible)
 
 frame_2 = CTkFrame(master=mainframe1, fg_color="#000000", height=200)
-frame_2.pack(fill='x', padx=2, pady=2)
+frame_2.pack(fill='x', padx=10, pady=10)
 
 # Left Frame in Frame 2
 
@@ -276,7 +276,7 @@ budget_button.place(relx=0.5, rely=0.4)
 # Frame 3_1
 
 frame_3_1 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", width=450, height=650, border_width=2)
-frame_3_1.pack(fill='x', padx=20, pady=20)
+frame_3_1.pack(fill='x', padx=13, pady=10)
 
 # Treeview Frame (Homepage)
 table = ttk.Treeview(frame_3_1, selectmode=BROWSE,
