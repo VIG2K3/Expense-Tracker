@@ -8,33 +8,39 @@ import sv_ttk
 import sqlite3
 
 # Connecting to the Database
-connector = sqlite3.connect("Expense Tracker CTk.db")
-cursor = connector.cursor()
+connector = sqlite3.connect("Expense Tracker ccc.db")
+cursor1 = connector.cursor()
+cursor2 = connector.cursor()
 
-cursor.execute(
+# Create the Expenses table
+cursor1.execute(
     'CREATE TABLE IF NOT EXISTS Expenses '
-    '(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
-    'Date DATETIME, '
+    '(ID_EXP INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
+    'Date_EXP DATETIME, '
     'Payee TEXT, '
-    'Note TEXT, '
-    'Amount FLOAT, '
-    'ModeOfPayment TEXT, '
-    'Category VARCHAR(20),'
-    'CONSTRAINT unique_exp UNIQUE (Date, Note))'
+    'Note_EXP TEXT, '
+    'Amount_EXP FLOAT, '
+    'ModeOfPayment_EXP TEXT, '
+    'Category_EXP VARCHAR(20),'
+    'CONSTRAINT unique_exp UNIQUE (Date_EXP, Note_EXP))'
 )
-cursor.execute(
+
+# Create the Income table
+cursor2.execute(
     'CREATE TABLE IF NOT EXISTS Income '
-    '(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
-    'Date DATETIME, '
-    'Payer TEXT, '
-    'Note TEXT, '
-    'Amount FLOAT, '
-    'ModeOfPayment TEXT, '
-    'Category VARCHAR(20)'
-    ')'
+    '(ID_INC INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
+    'DATE_INC DATETIME, '
+    'Payer_INC TEXT, '
+    'Note_INC TEXT, '
+    'Amount_INC FLOAT, '
+    'ModeOfPayment_INC TEXT, '
+    'Category_INC VARCHAR(20))'
 )
+
+# Commit the changes to the database
 connector.commit()
 
+# GUI
 money_app = CTk()
 money_app.resizable(False, False)
 money_app.geometry("1250x700")
@@ -44,7 +50,6 @@ set_appearance_mode("light")
 sv_ttk.set_theme("light")
 
 
-# Functions
 # Menu Functions
 def light_dark_mode():  # Switch between light/dark mode
     ld = lightdark.get()
@@ -63,14 +68,18 @@ def light_dark_mode():  # Switch between light/dark mode
 def addexp_frame():
     mainframe1.pack_forget()
     mainframe1left.pack_forget()
+    mainframe3.pack_forget()
     mainframe2.pack(fill='both', expand='true')
+
 
 # Add the Income button and switch back to homepage
 def addinc_frame():
     mainframe1.pack_forget()
     mainframe1left.pack_forget()
+    mainframe2.pack_forget()
     mainframe3.pack(fill='both', expand='true')
-    
+
+
 def home_frame():
     mainframe2.pack_forget()
     mainframe3.pack_forget()
@@ -79,19 +88,19 @@ def home_frame():
     list_all_expenses()
     show_expsum()
     list_all_income()
-    show_incsum()
+    # show_incsum()
 
 
-
-
+##############################################################################
 # Functions for 'Expenses' menu
+##############################################################################
 def list_all_expenses():
     global connector, table
 
     table.delete(*table.get_children())
 
-    all_data = connector.execute('SELECT * FROM Expenses')
-    data = all_data.fetchall()
+    all_data1 = connector.execute('SELECT * FROM Expenses')
+    data = all_data1.fetchall()
 
     for values in data:
         table.insert('', END, values=values)
@@ -99,7 +108,7 @@ def list_all_expenses():
 
 def view_expense_details():
     global table
-    global date, payee, note, amnt, MOP, cate
+    global date, payee, note_exp, amnt_exp, MOP_exp, cate_exp
     if not table.selection():
         mb.showerror('No expense selected', 'Please select an expense from the table to view its details')
     current_selected_expense = table.item(table.focus())
@@ -107,10 +116,10 @@ def view_expense_details():
     expenditure_date = datetime.date(int(values[1][:4]), int(values[1][5:7]), int(values[1][8:]))
     date.set_date(expenditure_date)
     payee.set(values[2])
-    note.set(values[3])
-    amnt.set(values[4])
-    MOP.set(values[5])
-    cate.set(values[6])
+    note_exp.set(values[3])
+    amnt_exp.set(values[4])
+    MOP_exp.set(values[5])
+    cate_exp.set(values[6])
 
 
 def selected_expense_to_words():
@@ -142,7 +151,7 @@ def remove_expense():
                          f'Are you sure that you want to delete the record of {values_selected[2]}')
 
     if surety:
-        connector.execute('DELETE FROM Expenses WHERE ID=%d' % values_selected[0])
+        connector.execute('DELETE FROM Expenses WHERE ID_EXP=%d' % values_selected[0])
         connector.commit()
 
         list_all_expenses()
@@ -151,34 +160,36 @@ def remove_expense():
 
 
 def clear_fields():
-    global note, payee, amnt, MOP, date, table, cate
+    global note_exp, payee, amnt_exp, MOP_exp, date, table, cate_exp
 
     today_date = datetime.datetime.now().date()
 
-    note.set('')
+    note_exp.set('')
     payee.set('')
-    amnt.set(0.0)
-    MOP.set('Select Method'), cate.set('Select Method'), date.set_date(today_date)
+    amnt_exp.set(0.0)
+    MOP_exp.set('Select Method'), cate_exp.set('Select Method'), date.set_date(today_date)
     table.selection_remove(*table.selection())
 
 
 def adding_expense():
-    global date, payee, note, amnt, MOP, cate
+    global date, payee, note_exp, amnt_exp, MOP_exp, cate_exp
     global connector
 
     try:
-        float(amnt.get())
+        float(amnt_exp.get())
     except:
         mb.showerror('Inappropriate Value', 'Please enter numbers in the expense entry.')
 
     try:
-        if not date.get() or not payee.get() or not note.get() or not amnt.get() or not MOP.get() or not cate.get():
+        if (not date.get() or not payee.get() or not note_exp.get() or not amnt_exp.get()
+                or not MOP_exp.get() or not cate_exp.get()):
             mb.showerror('Fields empty!',
                          "Please fill all the missing fields before pressing the add button!")
         else:
-            connector.execute('INSERT INTO Expenses (Date, Payee, Note, Amount, ModeOfPayment, Category) '
-                              'VALUES (?,?,?,ROUND(?,1),?,?)', (date.get_date(), payee.get(), note.get(),
-                                                                amnt.get(), MOP.get(), cate.get()))
+            connector.execute('INSERT INTO Expenses (Date_EXP, Payee, Note_EXP, Amount_EXP, ModeOfPayment_EXP, '
+                              'Category_EXP)'
+                              'VALUES (?,?,?,ROUND(?,1),?,?)', (date.get_date(), payee.get(), note_exp.get(),
+                                                                amnt_exp.get(), MOP_exp.get(), cate_exp.get()))
             connector.commit()
             clear_fields()
             list_all_expenses()
@@ -192,43 +203,203 @@ def edit_expense():
     global table
 
     def edit_existing_expense():
-        global date, amnt, note, payee, MOP, cate
+        global date, amnt_exp, note_exp, payee, MOP_exp, cate_exp
         global connector, table
         current_selected_expenditure = table.item(table.focus())
         contents = current_selected_expenditure['values']
         connector.execute(
-            'UPDATE Expenses SET Date = ?, Payee = ?, Note = ?, Amount = ROUND(?,1),'
-            ' ModeOfPayment = ?, Category = ? WHERE ID = ?',
-            (date.get_date(), payee.get(), note.get(), amnt.get(), MOP.get(), cate.get(), contents[0]))
+            'UPDATE Expenses SET Date = ?, Payee = ?, Note_EXP = ?, Amount_EXP = ROUND(?,1),'
+            'ModeOfPayment_EXP = ?, Category_EXP = ? WHERE ID_EXP = ?',
+            (date.get_date(), payee.get(), note_exp.get(), amnt_exp.get(),
+             MOP_exp.get(), cate_exp.get(), contents[0]))
         connector.commit()
         clear_fields()
         list_all_expenses()
         mb.showinfo('Data edited', 'We have updated the data and stored in the database as you wanted')
         return
-
+        saveedit_button1.destroy()
     if not table.selection():
         mb.showerror('No expense selected!',
                      'You have not selected any expense in the table for us to edit; please do that!')
         return
     view_expense_details()
-    saveedit_button = CTkButton(master=frame_5, text='Save Edit', command=edit_existing_expense,
-                                corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                                fg_color="#000000", )
-    saveedit_button.place(relx=0.75, rely=0.30)
-    saveedit_button.destroy()
+    saveedit_button1 = CTkButton(master=frame_5, text='Save Edit', command=edit_existing_expense,
+                                 corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
+                                 fg_color="#000000", )
+    saveedit_button1.place(relx=0.75, rely=0.30)
+
 
 
 # UI Display Function
 
 def show_expsum():
-    cursor.execute('SELECT Amount FROM Expenses')
-    result = cursor.fetchall()
+    cursor1.execute('SELECT Amount_EXP FROM Expenses')
+    result = cursor1.fetchall()
 
     total = sum(float(row[0]) for row in result)
     moneycounter.configure(text="RM {:.2f}".format(total))
 
 
+##############################################################################
+# Functions for 'Income' menu
+##############################################################################
+
+def list_all_income():
+    global connector, table2
+
+    table2.delete(*table2.get_children())
+
+    all_data2 = connector.execute('SELECT * FROM Income')
+    data = all_data2.fetchall()
+
+    for values in data:
+        table2.insert('', END, values=values)
+
+
+def selected_income_to_words():
+    global table2
+
+    if not table2.selection():
+        mb.showerror('No income selected!',
+                     'Please select an income from the table for us to read')
+        return
+
+    current_selected_income = table2.item(table2.focus())
+    values = current_selected_income['values']
+
+    message = (f'Your income can be read like: \n"{values[2]} paid to you {values[4]}'
+               f' for {values[3]} on {values[1]} via {values[5]} on {values[6]}"')
+
+    mb.showinfo('Here\'s how to read your income', message)
+
+
+def remove_income():
+    if not table2.selection():
+        mb.showerror('No record selected!', 'Please select a record to delete!')
+        return
+
+    current_selected_income = table2.item(table2.focus())
+    values_selected = current_selected_income['values']
+
+    surety = mb.askyesno('Are you sure?',
+                         f'Are you sure that you want to delete the record of {values_selected[2]}')
+
+    if surety:
+        connector.execute('DELETE FROM Income WHERE ID_INC=%d' % values_selected[0])
+        connector.commit()
+
+        list_all_income()
+        mb.showinfo('Record deleted successfully!',
+                    'The record you wanted to delete has been deleted successfully')
+
+
+def income_clear_fields():
+    global note_inc, payer, amnt_inc, MOP_inc, table2, date, cate_inc
+
+    today_date = datetime.datetime.now().date()
+
+    note_inc.set('')
+    payer.set('')
+    amnt_inc.set(0.00)
+    MOP_inc.set('Select Method'), cate_inc.set('Select Method'), date.set_date(today_date)
+    table2.selection_remove(*table2.selection())
+
+
+def adding_income():
+    global note_inc, payer, amnt_inc, MOP_inc, date, table2, cate_inc
+    global connector
+
+    try:
+        float(amnt_inc.get())
+    except ValueError:
+        mb.showerror('Inappropriate Value', 'Please enter numbers in the income entry.')
+        return
+
+    # Check if any of the required fields are empty
+    if (not date.get() or not payer.get() or not note_inc.get() or not amnt_inc.get()
+            or not MOP_inc.get() or not cate_inc.get()):
+        mb.showerror('Fields empty!',
+                     "Please fill all the missing fields before pressing the add button!")
+    else:
+        # If all fields are filled, insert the data into the database
+        connector.execute('INSERT INTO Income (DATE_INC, Payer_INC, Note_INC, Amount_INC, '
+                          'ModeOfPayment_INC, Category_INC) VALUES (?, ?, ?, '
+                          '?, ?, ?)',
+                          (date.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
+                           MOP_inc.get(), cate_inc.get()))
+        connector.commit()
+
+        # Clear the fields (assuming the function exists)
+        income_clear_fields()
+
+        # List all income data (assuming the function exists)
+        list_all_income()
+
+        # Show an info message
+        mb.showinfo('Income added',
+                    'The income whose details you just entered has been added to the database')
+
+
+def view_income_details():
+    global table2
+    global date, payer, note_inc, amnt_inc, MOP_inc, cate_inc
+    if not table2.selection():
+        mb.showerror('No expense selected', 'Please select an income from the table to view its details')
+    current_selected_income = table2.item(table2.focus())
+    values = current_selected_income['values']
+    income_date = datetime.date(int(values[1][:4]), int(values[1][5:7]), int(values[1][8:]))
+    date.set_date(income_date)
+    payer.set(values[2])
+    note_inc.set(values[3])
+    amnt_inc.set(values[4])
+    MOP_inc.set(values[5])
+    cate_inc.set(values[6])
+
+
+def edit_income():
+    global table2
+
+    def edit_existing_income():
+        global date, amnt_inc, note_inc, payee, MOP_inc, cate_inc
+        global connector, table2
+
+        current_selected_income = table2.item(table2.focus())
+        contents = current_selected_income['values']
+        connector.execute(
+            'UPDATE Income SET Date_INC = ?, Payer = ?, Note_INC = ?, Amount_INC = ?, ModeOfPayment_INC = ?, '
+            'Category_INC = ？WHERE ID_INC = ?',
+            (date.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
+             MOP_inc.get(), cate_inc.get(), contents[0]))
+        connector.commit()
+        clear_fields()
+        list_all_expenses()
+        mb.showinfo('Data edited', 'We have updated the data and stored in the database as you wanted')
+        return
+        saveedit_button2.destroy()
+    if not table2.selection():
+        mb.showerror('No income selected!',
+                     'You have not selected any income in the table for us to edit; please do that!')
+        return
+    view_income_details()
+    saveedit_button2 = CTkButton(master=frame_8_1, text='Save Edit', command=edit_existing_income,
+                                 corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
+                                 fg_color="#000000" )
+    saveedit_button2.place(x=160, y=500)
+
+
+# use it after done the income page
+# def show_incsum():
+#     cursor2.execute('SELECT Amount_INC FROM Income')
+#     result = cursor2.fetchall()
+#
+#     total = sum(float(row[0]) for row in result)
+#     moneycounter.configure(text="RM {:.2f}".format(total))
+
+
+##############################################################################
 # Left mainframe (Home)
+##############################################################################
+
 mainframe1left = CTkFrame(master=money_app, height=700, width=350, corner_radius=0)
 mainframe1left.pack(fill='both', side='left', expand='true')
 mainframe1left.configure(fg_color="#E64900")
@@ -236,13 +407,15 @@ mainframe1left.configure(fg_color="#E64900")
 lightdark = CTkSwitch(master=mainframe1left, text="Dark Mode", command=light_dark_mode,
                       onvalue=1, offvalue=0)
 lightdark.place(relx=0.05, rely=0.93)
-
+##############################################################################
 # Right mainframe (Home)
+##############################################################################
 mainframe1 = CTkFrame(master=money_app, fg_color="#000000", height=700, width=900, corner_radius=0)
 mainframe1.pack(fill='both', side='right', expand='true')
 
+##############################################################################
 # Frame 1 (invisible)
-
+##############################################################################
 frame_1 = CTkFrame(master=mainframe1, fg_color="#000000", height=150)
 frame_1.pack(fill='x', padx=10, pady=10)
 
@@ -258,12 +431,16 @@ Balancecounter.place(relx=0.02, rely=0.33)
 moneycounter = CTkLabel(master=frame_1_1, text="", font=('Microsoft YaHei UI Light', 50))
 moneycounter.place(relx=0.02, rely=0.5)
 
+##############################################################################
 # Frame 2 (invisible)
+##############################################################################
 
 frame_2 = CTkFrame(master=mainframe1, fg_color="#000000", height=200)
 frame_2.pack(fill='x', padx=10, pady=10)
 
+##############################################################################
 # Left Frame in Frame 2
+##############################################################################
 
 frame_2_1 = CTkFrame(master=frame_2, height=100, width=450)
 frame_2_1.pack(side='left', padx=1, pady=1)
@@ -276,7 +453,9 @@ addincbut = CTkButton(master=frame_2_1, text='Add Income', height=50, font=('Mic
                       hover_color="#808080", fg_color="#000000", command=addinc_frame)
 addincbut.place(anchor='center', relx=0.7, rely=0.5)
 
+##############################################################################
 # Right Frame in Frame 2
+##############################################################################
 
 frame_2_2 = CTkFrame(master=frame_2, height=100, width=450)
 frame_2_2.pack(side='right', padx=1, pady=1)
@@ -291,12 +470,15 @@ setbudget.place(relx=0.1, rely=0.5)
 budget_button = CTkButton(master=frame_2_2, text='Save', corner_radius=20, hover_color="#808080", fg_color="#000000")
 budget_button.place(relx=0.5, rely=0.4)
 
+##############################################################################
 # Frame 3_1
 
 frame_3_1 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", width=450, height=650, border_width=2)
 frame_3_1.pack(fill='x', padx=13, pady=10)
 
+##############################################################################
 # Treeview Frame (Homepage)
+
 table = ttk.Treeview(frame_3_1, selectmode=BROWSE,
                      columns=('ID', 'Date', 'Payee', 'Note', 'Amount', 'Mode of Payment', 'Category'))
 
@@ -326,19 +508,21 @@ table.column('#7', width=105, stretch=NO)  # Category column
 
 table.place(relx=0, y=0, relheight=1, relwidth=1)
 
-show_expsum()
 list_all_expenses()
-
-# Main Frame (Expenses)
+show_expsum()
+##############################################################################
+# Main Frame2 (Expenses)
+##############################################################################
 mainframe2 = CTkFrame(master=money_app, fg_color="#ebebeb", height=700, width=900)
 mainframe2.pack()
 
 # StringVar and DoubleVar variables (Add Expense)
-note = StringVar()
-amnt = DoubleVar()
+
+note_exp = StringVar()
+amnt_exp = DoubleVar()
 payee = StringVar()
-MOP = StringVar()
-cate = StringVar()
+MOP_exp = StringVar()
+cate_exp = StringVar()
 
 # Frame 5
 frame_5 = CTkFrame(master=mainframe2, fg_color="#FFFFFF", height=150)
@@ -351,7 +535,9 @@ heading.place(relx=0.50, rely=0.20, anchor='center')
 
 
 # Add or Edit Expense
-
+##############################################################################
+# Functions to clear the text in the entry exp_amount
+##############################################################################
 def clear_addexp_entry(event):
     if addexp_entry.get() == '0.0':
         addexp_entry.delete(0, 'end')
@@ -363,19 +549,20 @@ def reset_addexp_entry(event):
 
 
 addexp_entry = CTkEntry(master=frame_5, fg_color="#FFFFFF", width=250, height=40,
-                        corner_radius=10, justify="center", textvariable=amnt)
+                        corner_radius=10, justify="center", textvariable=amnt_exp)
 addexp_entry.place(relx=0.36, rely=0.35)
 addexp_entry.insert(0, '')
 addexp_entry.bind('<FocusIn>', clear_addexp_entry)
 addexp_entry.bind('<FocusOut>', reset_addexp_entry)
 
 # Button in Frame 5
+
 save_button = CTkButton(master=frame_5, text='Save', command=adding_expense,
                         corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
                         fg_color="#000000", )
 save_button.place(relx=0.75, rely=0.30)
 
-homepage_button = CTkButton(master=frame_5, command=home_frame, text='Back to Home Page',
+homepage_button = CTkButton(master=frame_5, text='Back to Home Page', command=home_frame,
                             corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
                             fg_color="#000000")
 homepage_button.place(relx=0.0, rely=0.0)
@@ -393,6 +580,7 @@ senexp_button = CTkButton(master=frame_5, text='Convert Expense to a sentence', 
 senexp_button.place(relx=0.10, rely=0.70)
 
 # Frame6_1
+
 frame_6_1 = CTkFrame(master=mainframe2, fg_color="#FFFFFF", height=600, width=450, border_width=2)
 frame_6_1.pack(side='left')
 
@@ -409,23 +597,24 @@ Payee_Entry = CTkEntry(master=frame_6_1, textvariable=payee)
 Payee_Entry.place(x=55, y=260)
 
 Note_Label = CTkLabel(frame_6_1, text='Note  :').place(x=10, y=130)
-Note_Entry = CTkEntry(frame_6_1, textvariable=note, width=200, height=100).place(x=50, y=130)
+Note_Entry = CTkEntry(frame_6_1, textvariable=note_exp, width=200, height=100).place(x=50, y=130)
 
 CTkLabel(master=frame_6_1, text='Mode of Payment:').place(x=10, y=310)
-dd1 = OptionMenu(frame_6_1, MOP,
+dd1 = OptionMenu(frame_6_1, MOP_exp,
                  *['Cash', 'Cheque', 'Credit Card', 'Debit Card', 'Google Pay',
                    'E-Wallet'], )
 dd1.place(x=160, y=390)
 dd1.configure(width=10)
 
 CTkLabel(master=frame_6_1, text='Category:').place(x=10, y=350)
-category = OptionMenu(frame_6_1, cate,
+category = OptionMenu(frame_6_1, cate_exp,
                       *['Automotive', 'Grocery', 'Hobby', 'Utility'])
 category.place(x=160, y=440)
 category.configure(width=10)
 
 # Frame6_2 (Expense Table)
-frame_6_2 = CTkFrame(master=mainframe2, fg_color="#FFFFFF", height=600, width=450, border_width=2)
+
+frame_6_2 = CTkFrame(master=mainframe2, fg_color="#FFFFFF", height=600, width=800, border_width=2)
 frame_6_2.pack(side='right')
 
 table = ttk.Treeview(frame_6_2, selectmode=BROWSE,
@@ -460,204 +649,10 @@ table.place(relx=0, y=0, relheight=1, relwidth=1)
 list_all_expenses()
 show_expsum()
 
+##############################################################################
+# Main Frame3 (Add Income)
+##############################################################################
 
-# Functions for 'Income' menu
-
-def list_all_income():
-    global connector, table
-
-    table.delete(*table.get_children())
-
-    all_data = connector.execute('SELECT * FROM Income')
-    data = all_data.fetchall()
-
-    for values in data:
-        table.insert('', END, values=values)
-
-
-def selected_income_to_words():
-    global table
-
-    if not table.selection():
-        mb.showerror('No income selected!',
-                     'Please select an income from the table for us to read')
-        return
-
-    current_selected_income = table.item(table.focus())
-    values = current_selected_income['values']
-
-    message = (f'Your income can be read like: \n"You paid {values[4]} to {values[2]} '
-               f'for {values[3]} on {values[1]} via {values[5]} on{values[6]}"')
-
-    mb.showinfo('Here\'s how to read your income', message)
-
-
-def remove_income():
-    if not table.selection():
-        mb.showerror('No record selected!', 'Please select a record to delete!')
-        return
-
-    current_selected_income = table.item(table.focus())
-    values_selected = current_selected_income['values']
-
-    surety = mb.askyesno('Are you sure?',
-                         f'Are you sure that you want to delete the record of {values_selected[2]}')
-
-    if surety:
-        connector.execute('DELETE FROM Income WHERE ID=%d' % values_selected[0])
-        connector.commit()
-
-        list_all_income()
-        mb.showinfo('Record deleted successfully!',
-                    'The record you wanted to delete has been deleted successfully')
-
-
-def income_clear_fields():
-    global note_inc, payer, amnt_inc, MOP_inc, table, date, cate_inc
-
-    today_date = datetime.datetime.now().date()
-
-    note_inc.set('')
-    payer.set('')
-    amnt_inc.set(0.00)
-    MOP_inc.set('Select Method'), cate_inc.set('Select Method'), date.set_date(today_date)
-    table.selection_remove(*table.selection())
-
-
-def adding_income():
-    global note_inc, payer, amnt_inc, MOP_inc, date, table, cate_inc
-    global connector
-
-    try:
-        float(amnt_inc.get())
-    except ValueError:
-        mb.showerror('Inappropriate Value', 'Please enter numbers in the income entry.')
-        return
-
-    # Check if any of the required fields are empty
-    if (not date.get() or not payer.get() or not note_inc.get() or not amnt_inc.get()
-            or not MOP_inc.get() or not cate_inc.get()):
-        mb.showerror('Fields empty!',
-                     "Please fill all the missing fields before pressing the add button!")
-    else:
-        # If all fields are filled, insert the data into the database
-        connector.execute('INSERT INTO Income (Date, Payer, Note, Amount, '
-                          'ModeOfPayment, Category) VALUES (?, ?, ?, '
-                          '?, ?, ?)',
-                          (date.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
-                           MOP_inc.get(), cate_inc.get()))
-        connector.commit()
-
-        # Clear the fields (assuming the function exists)
-        income_clear_fields()
-
-        # List all income data (assuming the function exists)
-        list_all_income()
-
-        # Show an info message
-        mb.showinfo('Income added',
-                    'The income whose details you just entered has been added to the database')
-
-
-def view_income_details():
-    global table
-    global date, payer, note_inc, amnt_inc, MOP_inc, cate_inc
-    if not table.selection():
-        mb.showerror('No expense selected', 'Please select an income from the table to view its details')
-    current_selected_income = table.item(table.focus())
-    values = current_selected_income['values']
-    income_date = datetime.date(int(values[1][:4]), int(values[1][5:7]), int(values[1][8:]))
-    date.set_date(income_date)
-    payer.set(values[2])
-    note_inc.set(values[3])
-    amnt_inc.set(values[4])
-    MOP_inc.set(values[5])
-    cate_inc.set(values[6])
-
-
-def edit_income():
-    global table
-
-    # noinspection PyGlobalUndefined
-    def edit_existing_income():
-        global date, amnt_inc, note_inc, payer, MOP_inc, cate_inc
-        global connector, table
-
-        current_selected_income = table.item(table.focus())
-        contents = current_selected_income['values']
-
-        connector.execute(
-            'UPDATE Income SET Date = ?, Payer = ?, Note= ?, Amount = ?, ModeOfPayment = ?, '
-            'Category = ？WHERE ID= ?',
-            (date.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
-             MOP_inc.get(), cate_inc.get(), contents[0]))
-        connector.commit()
-
-        income_clear_fields()
-        list_all_income()
-
-        mb.showinfo('Data edited',
-                    'We have updated the data and stored in the database as you wanted')
-        edit_inc_btn.destroy()
-        return
-
-    if not table.selection():
-        mb.showerror('No expense selected!',
-                     'You have not selected any income in the table for us to edit; please do that!')
-        return
-    view_income_details()
-
-    edit_inc_btn = CTkButton(master=frame_8, text='Edit income', width=30, command=edit_existing_income)
-    edit_inc_btn.place(x=10, y=395)
-
-
-def show_incsum():
-    cursor.execute('SELECT Amount FROM Income')
-    result = cursor.fetchall()
-
-    total = sum(float(row[0]) for row in result)
-    moneycounter.configure(text="RM {:.2f}".format(total))
-
-
-# # Frame 3_2
-#
-# frame_3_1 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", width=450, height=650, border_width=2)
-# frame_3_1.pack(fill='x', padx=13, pady=10)
-#
-# # Treeview Frame (Homepage)
-# table = ttk.Treeview(frame_3_1, selectmode=BROWSE,
-#                      columns=('ID', 'Date', 'Payee', 'Note', 'Amount', 'Mode of Payment', 'Category'))
-#
-# X_Scroller = CTkScrollbar(table, orientation=HORIZONTAL, command=table.xview)
-# Y_Scroller = CTkScrollbar(table, orientation=VERTICAL, command=table.yview)
-# X_Scroller.pack(side=BOTTOM, fill=X)
-# Y_Scroller.pack(side=RIGHT, fill=Y)
-#
-# table.config(yscrollcommand=Y_Scroller.set, xscrollcommand=X_Scroller.set)
-#
-# table.heading('ID', text='S No.', anchor=CENTER)
-# table.heading('Date', text='Date', anchor=CENTER)
-# table.heading('Payee', text='Payer', anchor=CENTER)
-# table.heading('Note', text='Note', anchor=CENTER)
-# table.heading('Amount', text='Amount', anchor=CENTER)
-# table.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
-# table.heading('Category', text='Category', anchor=CENTER)
-#
-# table.column('#0', width=0, stretch=NO)
-# table.column('#1', width=50, stretch=NO)
-# table.column('#2', width=95, stretch=NO)  # Date column
-# table.column('#3', width=150, stretch=NO)  # Payee column
-# table.column('#4', width=270, stretch=NO)  # Note column
-# table.column('#5', width=135, stretch=NO)  # Amount column
-# table.column('#6', width=205, stretch=NO)  # Mode of Payment column
-# table.column('#7', width=105, stretch=NO)  # Category column
-#
-# table.place(relx=0, y=0, relheight=1, relwidth=1)
-#
-# list_all_income()
-# show_incsum()
-
-# Main Frame (Add Income)
 mainframe3 = CTkFrame(master=money_app, fg_color="#ebebeb", height=700, width=900)
 mainframe3.pack()
 
@@ -669,16 +664,18 @@ MOP_inc = StringVar()
 cate_inc = StringVar()
 
 # Frame 8
+
 frame_8 = CTkFrame(master=mainframe3, fg_color="#FFFFFF", height=150)
 frame_8.pack(fill='x', padx=2, pady=2)
 
 # New Expense heading
+
 heading = CTkLabel(master=frame_8, text='INCOME', fg_color="#FFFFFF", font=('Microsoft YaHei UI Light', 23, 'bold'),
                    corner_radius=30)
 heading.place(relx=0.50, rely=0.20, anchor='center')
 
 
-# Add or Edit Income
+# Functions to clear the text in the entry inc_amount
 
 def clear_addinc_entry(event):
     if addinc_entry.get() == '0.0':
@@ -707,6 +704,7 @@ addinc_entry.bind('<FocusIn>', clear_addinc_entry)
 addinc_entry.bind('<FocusOut>', reset_addinc_entry)
 
 # Button in Frame 8
+
 save_button = CTkButton(master=frame_8, text='Save', command=adding_income,
                         corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
                         fg_color="#000000")
@@ -730,6 +728,7 @@ seninc_button = CTkButton(master=frame_8, text='Convert Income to a sentence', c
 seninc_button.place(relx=0.10, rely=0.70)
 
 # Frame8_1
+
 frame_8_1 = CTkFrame(master=mainframe3, fg_color="#FFFFFF", height=600, width=450, border_width=2)
 frame_8_1.pack(side='left')
 
@@ -760,47 +759,48 @@ category_inc = OptionMenu(frame_8_1, cate_inc,
 category_inc.place(x=160, y=440)
 category_inc.configure(width=10)
 
-# Frame8_2 (Expense Table)
-frame_8_2 = CTkFrame(master=mainframe3, fg_color="#FFFFFF", height=600, width=450, border_width=2)
+# Frame8_2 (Income Table)
+
+frame_8_2 = CTkFrame(master=mainframe3, fg_color="#FFFFFF", height=600, width=800, border_width=2)
 frame_8_2.pack(side='right')
 
-table = ttk.Treeview(frame_8_2, selectmode=BROWSE, columns=('ID', 'Date', 'Payer', 'Note', 'Amount',
-                                                            "Mode of Payment", 'Category'))
+table2 = ttk.Treeview(frame_8_2, selectmode=BROWSE, columns=('ID', 'Date', 'Payer', 'Note', 'Amount',
+                                                             "Mode of Payment", 'Category'))
 
-X_Scroller_inc = CTkScrollbar(table, orientation=HORIZONTAL, command=table.xview)
-Y_Scroller_inc = CTkScrollbar(table, orientation=VERTICAL, command=table.yview)
+X_Scroller_inc = CTkScrollbar(table2, orientation=HORIZONTAL, command=table2.xview)
+Y_Scroller_inc = CTkScrollbar(table2, orientation=VERTICAL, command=table2.yview)
 X_Scroller_inc.pack(side=BOTTOM, fill=X)
 Y_Scroller_inc.pack(side=RIGHT, fill=Y)
 
-table.config(yscrollcommand=Y_Scroller_inc.set, xscrollcommand=X_Scroller_inc.set)
+table2.config(yscrollcommand=Y_Scroller_inc.set, xscrollcommand=X_Scroller_inc.set)
 
-table.heading('ID', text='S No.', anchor=CENTER)
-table.heading('Date', text='Date', anchor=CENTER)
-table.heading('Payer', text='Payer', anchor=CENTER)
-table.heading('Note', text='Note', anchor=CENTER)
-table.heading('Amount', text='Amount', anchor=CENTER)
-table.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
-table.heading('Category', text='Category', anchor=CENTER)
+table2.heading('ID', text='S No.', anchor=CENTER)
+table2.heading('Date', text='Date', anchor=CENTER)
+table2.heading('Payer', text='Payer', anchor=CENTER)
+table2.heading('Note', text='Note', anchor=CENTER)
+table2.heading('Amount', text='Amount', anchor=CENTER)
+table2.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
+table2.heading('Category', text='Category', anchor=CENTER)
 
-table.column('#0', width=0, stretch=NO)
-table.column('#1', width=50, stretch=NO)
-table.column('#2', width=95, stretch=NO)  # Date column
-table.column('#3', width=150, stretch=NO)  # Payer column
-table.column('#4', width=255, stretch=NO)  # Title column
-table.column('#5', width=135, stretch=NO)  # Amount column
-table.column('#6', width=105, stretch=NO)  # Mode of Payment column
-table.column('#7', width=105, stretch=NO)  # Category column
+table2.column('#0', width=0, stretch=NO)
+table2.column('#1', width=50, stretch=NO)
+table2.column('#2', width=95, stretch=NO)  # Date column
+table2.column('#3', width=150, stretch=NO)  # Payer column
+table2.column('#4', width=255, stretch=NO)  # Title column
+table2.column('#5', width=135, stretch=NO)  # Amount column
+table2.column('#6', width=105, stretch=NO)  # Mode of Payment column
+table2.column('#7', width=105, stretch=NO)  # Category column
 
-table.place(relx=0, y=0, relheight=1, relwidth=1)
+table2.place(relx=0, y=0, relheight=1, relwidth=1)
 
 list_all_income()
-show_incsum()
+# show_incsum()
 
 # Let the Home Menu appear first
 mainframe2.pack_forget()
-mainframe3.pack_forget()
 
 money_app.mainloop()
 
-
+cursor1.close()
+cursor2.close()
 connector.close()
