@@ -65,28 +65,23 @@ def addexp_frame():
     mainframe1left.pack_forget()
     mainframe2.pack(fill='both', expand='true')
 
-
-def home_frame():
-    mainframe2.pack_forget()
-    mainframe1.pack(fill='both', side='right', expand='true')
-    mainframe1left.pack(fill='both', side='left', expand='true')
-    list_all_expenses()
-    show_expsum()
-
-
 # Add the Income button and switch back to homepage
 def addinc_frame():
     mainframe1.pack_forget()
     mainframe1left.pack_forget()
     mainframe3.pack(fill='both', expand='true')
-
-
-def home_frame2():
+    
+def home_frame():
+    mainframe2.pack_forget()
     mainframe3.pack_forget()
     mainframe1.pack(fill='both', side='right', expand='true')
     mainframe1left.pack(fill='both', side='left', expand='true')
+    list_all_expenses()
+    show_expsum()
     list_all_income()
     show_incsum()
+
+
 
 
 # Functions for 'Expenses' menu
@@ -717,7 +712,7 @@ save_button = CTkButton(master=frame_8, text='Save', command=adding_income,
                         fg_color="#000000")
 save_button.place(relx=0.75, rely=0.30)
 
-homepage_button = CTkButton(master=frame_8, command=home_frame2, text='Back to Home Page',
+homepage_button = CTkButton(master=frame_8, command=home_frame, text='Back to Home Page',
                             corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
                             fg_color="#000000")
 homepage_button.place(relx=0.0, rely=0.0)
@@ -803,9 +798,9 @@ show_incsum()
 
 # Let the Home Menu appear first
 mainframe2.pack_forget()
+mainframe3.pack_forget()
 
 money_app.mainloop()
 
-mainframe3.pack_forget()
 
 connector.close()
