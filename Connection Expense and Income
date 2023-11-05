@@ -208,7 +208,7 @@ def edit_expense():
         current_selected_expenditure = table.item(table.focus())
         contents = current_selected_expenditure['values']
         connector.execute(
-            'UPDATE Expenses SET Date = ?, Payee = ?, Note_EXP = ?, Amount_EXP = ROUND(?,1),'
+            'UPDATE Expenses SET Date_EXP = ?, Payee = ?, Note_EXP = ?, Amount_EXP = ROUND(?,1),'
             'ModeOfPayment_EXP = ?, Category_EXP = ? WHERE ID_EXP = ?',
             (date.get_date(), payee.get(), note_exp.get(), amnt_exp.get(),
              MOP_exp.get(), cate_exp.get(), contents[0]))
@@ -216,18 +216,18 @@ def edit_expense():
         clear_fields()
         list_all_expenses()
         mb.showinfo('Data edited', 'We have updated the data and stored in the database as you wanted')
-        return
         saveedit_button1.destroy()
+        return
+
     if not table.selection():
         mb.showerror('No expense selected!',
                      'You have not selected any expense in the table for us to edit; please do that!')
         return
     view_expense_details()
-    saveedit_button1 = CTkButton(master=frame_5, text='Save Edit', command=edit_existing_expense,
+    saveedit_button1 = CTkButton(master=frame_6_1, text='Save Edit', command=edit_existing_expense,
                                  corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                                 fg_color="#000000", )
-    saveedit_button1.place(relx=0.75, rely=0.30)
-
+                                 fg_color="#000000")
+    saveedit_button1.place(x=160, y=500)
 
 
 # UI Display Function
@@ -366,24 +366,26 @@ def edit_income():
         current_selected_income = table2.item(table2.focus())
         contents = current_selected_income['values']
         connector.execute(
-            'UPDATE Income SET Date_INC = ?, Payer = ?, Note_INC = ?, Amount_INC = ?, ModeOfPayment_INC = ?, '
-            'Category_INC = ？WHERE ID_INC = ?',
+            'UPDATE Income SET Date_INC = ?, Payer_INC = ?, Note_INC = ?, Amount_INC = ?, ModeOfPayment_INC = ?, '
+            'Category_INC = ? WHERE ID_INC = ?',
             (date.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
              MOP_inc.get(), cate_inc.get(), contents[0]))
         connector.commit()
         clear_fields()
         list_all_expenses()
         mb.showinfo('Data edited', 'We have updated the data and stored in the database as you wanted')
-        return
         saveedit_button2.destroy()
+        return
+
     if not table2.selection():
         mb.showerror('No income selected!',
                      'You have not selected any income in the table for us to edit; please do that!')
         return
+
     view_income_details()
     saveedit_button2 = CTkButton(master=frame_8_1, text='Save Edit', command=edit_existing_income,
                                  corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                                 fg_color="#000000" )
+                                 fg_color="#000000")
     saveedit_button2.place(x=160, y=500)
 
 
