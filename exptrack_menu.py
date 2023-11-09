@@ -4,13 +4,25 @@ from tkinter import ttk
 from tkcalendar import DateEntry
 import datetime
 import tkinter.messagebox as mb
+from PIL import Image
 import sv_ttk
+import hashlib
 import sqlite3
 
 # Connecting to the Database
 connector = sqlite3.connect("Expense Tracker ccc.db")
 cursor1 = connector.cursor()
 cursor2 = connector.cursor()
+cursor10 = connector.cursor()
+
+# Create the Users table
+cursor10.execute('''
+    CREATE TABLE IF NOT EXISTS Users (
+        User_ID INTEGER PRIMARY KEY,
+        User_username VARCHAR UNIQUE NOT NULL,
+        User_password VARCHAR NOT NULL
+    )
+''')
 
 # Create the Expenses table
 cursor1.execute(
@@ -22,6 +34,8 @@ cursor1.execute(
     'Amount_EXP FLOAT, '
     'ModeOfPayment_EXP TEXT, '
     'Category_EXP VARCHAR(20),'
+    'User_ID INTEGER,'
+    'FOREIGN KEY (User_ID) REFERENCES Users(User_ID)'
     'CONSTRAINT unique_exp UNIQUE (Date_EXP, Note_EXP))'
 )
 
@@ -34,24 +48,251 @@ cursor2.execute(
     'Note_INC TEXT, '
     'Amount_INC FLOAT, '
     'ModeOfPayment_INC TEXT, '
-    'Category_INC VARCHAR(20))'
+    'Category_INC VARCHAR(20),'
+    'User_ID INTEGER,'
+    'FOREIGN KEY (User_ID) REFERENCES Users(User_ID))'
 )
 
 # Commit the changes to the database
 connector.commit()
 
-# GUI
+set_appearance_mode("light")
+
+
+# Login UI Functions
+def toggle_password_visibility():
+    if show_password_var.get():
+        password_entry.configure(show="")
+        register_confirm_password_entry.configure(show="")
+        register_username_password_entry.configure(show="")
+    else:
+        password_entry.configure(show="*")
+        register_confirm_password_entry.configure(show="*")
+        register_username_password_entry.configure(show="*")
+
+
+def user_login():
+    entered_username = user_entry.get()
+    entered_password = hash_password(password_entry.get())
+    if entered_username and entered_password:
+        # Retrieve the stored password for the entered username
+        cursor10.execute('SELECT User_ID FROM Users WHERE User_username = ? AND User_password = ?',
+                       (entered_username, entered_password))
+        user_id = cursor10.fetchone()
+
+        if user_id:
+            logged_in_user[0] = user_id[0]
+            mb.showinfo("Login Successful", "Welcome, " + entered_username + "!")
+            root.destroy()
+
+        else:
+            mb.showerror("Login Error", "Invalid username or password.")
+    else:
+        mb.showerror("Login Error", "Please enter both a username and password.")
+
+
+def switch_to_login_page():
+    register_frame.place_forget()
+    login_frame.place(x=480, y=70)
+
+
+def switch_to_register_page():
+    login_frame.place_forget()
+    register_frame.place(x=480, y=50)
+
+
+def clear_username_entry(event):
+    if user_entry.get() == 'Username':
+        user_entry.delete(0, 'end')
+
+
+def reset_username_entry(event):
+    if user_entry.get() == '':
+        user_entry.insert(0, 'Username')
+
+
+def clear_password_entry(event):
+    if password_entry.get() == 'Password':
+        password_entry.delete(0, 'end')
+        password_entry.configure(show='*')
+
+
+def reset_password_entry(event):
+    if password_entry.get() == '':
+        password_entry.configure(show='')
+        password_entry.insert(0, 'Password')
+
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+# SQLite DML
+def register():
+    username = register_username_entry.get()
+    password = hash_password(register_username_password_entry.get())
+    confirm_password = hash_password(register_confirm_password_entry.get())
+    if username and password:
+        if password != confirm_password:
+            mb.showerror("Registration Error", "Passwords do not match.")
+        else:
+            try:
+                cursor10.execute('INSERT INTO Users (User_username, User_password) VALUES (?, ?)',
+                               (username, password))
+                connector.commit()
+                mb.showinfo("Registration Successful", "You are now registered.")
+                register_username_entry.delete(0, END)
+                register_username_password_entry.delete(0, END)
+                register_confirm_password_entry.delete(0, END)
+                switch_to_login_page()
+            except sqlite3.IntegrityError:
+                mb.showerror("Registration Error", "Username already exists. Please choose another.")
+
+    else:
+        mb.showerror("Registration Error", "Please enter both a username and password.")
+
+# Initialize the logged-in user as None
+logged_in_user = [None]
+
+# The Sign In Page Setup
+root = CTk()
+root.title('Acre Expense Tracker')
+root.geometry('925x500+300+200')
+root.configure(fg_color="#E64900")
+root.resizable(False, False)
+
+login_frame = CTkFrame(root, width=350, height=350)
+login_frame.place(x=480, y=70)
+
+heading = CTkLabel(login_frame, text='Sign In', font=('Microsoft YaHei UI Light', 30, 'bold'))
+heading.place(relx=0.5, rely=0.1, anchor='center')
+
+user_entry = CTkEntry(login_frame, width=290, font=('Microsoft YaHei UI Light', 11))
+user_entry.place(x=30, y=80)
+user_entry.insert(0, 'Username')
+user_entry.bind('<FocusIn>', clear_username_entry)
+user_entry.bind('<FocusOut>', reset_username_entry)
+
+show_password_var = BooleanVar()
+show_password_checkbox = CTkCheckBox(login_frame, text="Show Password", variable=show_password_var,
+                                     command=toggle_password_visibility)
+show_password_checkbox.place(relx=0.5, rely=0.85, anchor='center')
+
+
+password_entry = CTkEntry(login_frame, width=290, font=('Microsoft YaHei UI Light', 11))
+password_entry.place(x=30, y=130)
+password_entry.insert(0, 'Password')
+password_entry.configure(show='')
+password_entry.bind('<FocusIn>', clear_password_entry)
+password_entry.bind('<FocusOut>', reset_password_entry)
+
+login_button = CTkButton(login_frame, width=39, text='Sign In', fg_color="green", hover_color="#005300",
+                      command=user_login)
+login_button.place(relx=0.5, rely=0.55, anchor='center')
+label = CTkLabel(login_frame, text="Don't have an account?", font=('Microsoft YaHei UI Light', 12))
+label.place(x=75, y=220)
+sign_up = CTkButton(login_frame, width=6, text='Sign Up', fg_color='green', hover_color="#005300",
+                 command=switch_to_register_page)
+sign_up.place(x=215, y=220)
+
+# Image in UI
+acre_image = CTkImage(light_image=Image.open("Acre Logo White.png"), size=(340, 182))
+
+label1 = CTkLabel(root, image=acre_image, text='')
+label1.place(x=60, y=130)
+
+# Sign Up frame
+register_frame = CTkFrame(root, width=350, height=390)
+heading = CTkLabel(register_frame, text='Sign Up', font=('Microsoft YaHei UI light', 30, 'bold'), )
+heading.place(relx=0.5, rely=0.1, anchor='center')
+
+
+# Username frame
+def reset_username_signup(event):
+    register_username_entry.delete(0, "end")
+
+
+def clear_username_signup(event):
+    name = register_username_entry.get()
+    if name == '':
+        register_username_entry.insert(0, 'Username')
+
+
+register_username_entry = CTkEntry(register_frame, width=290,
+                                font=('Microsoft YaHei UI light', 11))
+register_username_entry.place(x=30, y=100)
+register_username_entry.insert(0, 'Username')
+register_username_entry.bind('<FocusIn>', reset_username_signup)
+register_username_entry.bind('<FocusOut>', clear_username_signup)
+
+
+# Password frame
+def clear_password1_entry(event):
+    if register_username_password_entry.get() == 'Password':
+        register_username_password_entry.delete(0, 'end')
+        register_username_password_entry.configure(show='*')
+
+
+def reset_password1_entry(event):
+    if register_username_password_entry.get() == '':
+        register_username_password_entry.configure(show='')
+        register_username_password_entry.insert(0, 'Password')
+
+
+register_username_password_entry = CTkEntry(register_frame, width=290,
+                                         font=('Microsoft YaHei UI light', 11))
+register_username_password_entry.place(x=30, y=150)
+register_username_password_entry.insert(0, 'Password')
+register_username_password_entry.bind('<FocusIn>', clear_password1_entry)
+register_username_password_entry.bind('<FocusOut>', reset_password1_entry)
+
+
+# Confirm Password frame
+def clear_password2_entry(event):
+    if register_confirm_password_entry.get() == 'Confirm Password':
+        register_confirm_password_entry.delete(0, 'end')
+        register_confirm_password_entry.configure(show='*')
+
+
+def reset_password2_entry(event):
+    if register_confirm_password_entry.get() == '':
+        register_confirm_password_entry.configure(show='')
+        register_confirm_password_entry.insert(0, 'Confirm Password')
+
+
+register_confirm_password_entry = CTkEntry(register_frame, width=290,
+                                        font=('Microsoft YaHei UI light', 11))
+register_confirm_password_entry.place(x=30, y=200)
+register_confirm_password_entry.insert(0, 'Confirm Password')
+register_confirm_password_entry.bind('<FocusIn>', clear_password2_entry)
+register_confirm_password_entry.bind('<FocusOut>', reset_password2_entry)
+
+# Sign Up Button
+CTkButton(register_frame, width=39, text='Sign Up', fg_color="green", hover_color="#005300", command=register).place(
+    relx=0.5, rely=0.68, anchor='center')
+label = CTkLabel(register_frame, text='I have an account.', font=('Microsoft YaHei UI Light', 12))
+label.place(x=90, y=310)
+signin = CTkButton(register_frame, width=6, text='Sign In', cursor='hand2', fg_color="green", hover_color="#005300",
+                command=switch_to_login_page)
+signin.place(x=200, y=310)
+
+show_password_checkbox2 = CTkCheckBox(register_frame, text="Show Password", variable=show_password_var,
+                                      command=toggle_password_visibility)
+show_password_checkbox2.place(relx=0.5, rely=0.93, anchor='center')
+
+root.mainloop()
+
+# Home Menu GUI
 money_app = CTk()
 money_app.resizable(False, False)
 money_app.geometry("1500x750")
-money_app.title("Expense Tracker")
+money_app.title("Acre Expense Tracker")
 money_app.configure(bg='black')
 
-set_appearance_mode("light")
 sv_ttk.set_theme("light")
 
 
-# Menu Functions
+# Home Menu Functions
 def light_dark_mode():  # Switch between light/dark mode
     ld = lightdark.get()
 
@@ -98,7 +339,7 @@ def home_frame():
     mainframe3left.pack_forget()
     frame_6_1.pack_forget()
     frame_8_1.pack_forget()
-    clear_fields()
+    # clear_fields()
     income_clear_fields()
     mainframe1left.pack(fill='both', side='left', expand='true')
     frame_3_1.pack(side='left', padx=13, pady=10)
@@ -118,7 +359,7 @@ def list_all_expenses():
 
     table.delete(*table.get_children())
 
-    all_data1 = connector.execute('SELECT * FROM Expenses')
+    all_data1 = connector.execute('SELECT * FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
     data = all_data1.fetchall()
 
     for values in data:
@@ -130,7 +371,7 @@ def list_all_expenses1():
 
     table3.delete(*table3.get_children())
 
-    all_data3 = connector.execute('SELECT * FROM Expenses')
+    all_data3 = connector.execute('SELECT * FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
     data = all_data3.fetchall()
 
     for values in data:
@@ -182,7 +423,8 @@ def remove_expense():
                          f'Are you sure that you want to delete the record of {values_selected[2]}')
 
     if surety:
-        connector.execute('DELETE FROM Expenses WHERE ID_EXP=%d' % values_selected[0])
+        connector.execute('DELETE FROM Expenses WHERE ID_EXP = ? AND User_ID = ?',
+                          (values_selected[0], logged_in_user[0]))
         connector.commit()
 
         list_all_expenses()
@@ -220,10 +462,12 @@ def adding_expense():
             mb.showerror('Fields empty!',
                          "Please fill all the missing fields before pressing the add button!")
         else:
-            connector.execute('INSERT INTO Expenses (Date_EXP, Payee, Note_EXP, Amount_EXP, ModeOfPayment_EXP, '
-                              'Category_EXP)'
-                              'VALUES (?,?,?,ROUND(?,1),?,?)', (date_exp.get_date(), payee.get(), note_exp.get(),
-                                                                amnt_exp.get(), MOP_exp.get(), cate_exp.get()))
+            (connector.execute('INSERT INTO Expenses (Date_EXP, Payee, Note_EXP, Amount_EXP, ModeOfPayment_EXP, '
+                              'Category_EXP, User_ID)'
+                              'VALUES (?,?,?,ROUND(?,1),?,?,?)', (date_exp.get_date(), payee.get(), note_exp.get(),
+                                                                amnt_exp.get(), MOP_exp.get(), cate_exp.get(),
+                                                                logged_in_user[0])))
+
             connector.commit()
             clear_fields()
             list_all_expenses()
@@ -258,9 +502,9 @@ def edit_expense():
             else:
                 connector.execute(
                     'UPDATE Expenses SET Date_EXP = ?, Payee = ?, Note_EXP = ?, Amount_EXP = ROUND(?,1),'
-                    'ModeOfPayment_EXP = ?, Category_EXP = ? WHERE ID_EXP = ?',
+                    'ModeOfPayment_EXP = ?, Category_EXP = ? WHERE ID_EXP = ? AND User_ID = ?',
                     (date_exp.get_date(), payee.get(), note_exp.get(), amnt_exp.get(),
-                     MOP_exp.get(), cate_exp.get(), contents[0]))
+                     MOP_exp.get(), cate_exp.get(), contents[0], logged_in_user[0]))
                 connector.commit()
                 clear_fields()
                 list_all_expenses()
@@ -279,18 +523,15 @@ def edit_expense():
 
     view_expense_details()
     saveedit_button1 = CTkButton(master=mainframe2left, text='Save Edit', command=edit_existing_expense,
-                                 corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                                 fg_color="#000000")
-    saveedit_button1.place(relx=0.3, rely=0.7)
-
-    # if clear_fields():
-    #     saveedit_button1.destroy()
+                                 corner_radius=5, hover_color="#00456D", font=('Microsoft YaHei UI Light', 13, 'bold'),
+                                 fg_color="#007CC2")
+    saveedit_button1.place(relx=0.3, rely=0.75)
 
 
 # UI Display Function
 
 def show_expsum():
-    cursor1.execute('SELECT Amount_EXP FROM Expenses')
+    cursor1.execute('SELECT Amount_EXP FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
     result1 = cursor1.fetchall()
 
     total1 = sum(float(row[0]) for row in result1)
@@ -306,7 +547,7 @@ def list_all_income():
 
     table2.delete(*table2.get_children())
 
-    all_data2 = connector.execute('SELECT * FROM Income')
+    all_data2 = connector.execute('SELECT * FROM Income WHERE User_ID = ?', (logged_in_user[0],))
     data = all_data2.fetchall()
 
     for values in data:
@@ -318,7 +559,7 @@ def list_all_income1():
 
     table4.delete(*table4.get_children())
 
-    all_data4 = connector.execute('SELECT * FROM Income')
+    all_data4 = connector.execute('SELECT * FROM Income WHERE User_ID = ?', (logged_in_user[0],))
     data = all_data4.fetchall()
 
     for values in data:
@@ -354,7 +595,8 @@ def remove_income():
                          f'Are you sure that you want to delete the record of {values_selected[2]}')
 
     if surety:
-        connector.execute('DELETE FROM Income WHERE ID_INC=%d' % values_selected[0])
+        connector.execute('DELETE FROM Income WHERE ID_INC = ? AND User_ID = ?',
+                          (values_selected[0], logged_in_user[0]))
         connector.commit()
 
         list_all_income()
@@ -395,12 +637,11 @@ def adding_income():
         else:
             # If all fields are filled, insert the data into the database
             connector.execute('INSERT INTO Income (Date_INC, Payer_INC, Note_INC, Amount_INC, '
-                              'ModeOfPayment_INC, Category_INC) VALUES (?, ?, ?, '
-                              'ROUND(?,1), ?, ?)',
+                              'ModeOfPayment_INC, Category_INC, User_ID) VALUES (?, ?, ?, '
+                              'ROUND(?,1), ?, ?, ?)',
                               (date_inc.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
-                               MOP_inc.get(), cate_inc.get()))
+                               MOP_inc.get(), cate_inc.get(), logged_in_user[0]))
             connector.commit()
-
             income_clear_fields()
             list_all_income()
             show_incsum()
@@ -454,12 +695,13 @@ def edit_income():
                 connector.execute(
                     'UPDATE Income SET Date_INC = ?, Payer_INC = ?, Note_INC = ?, Amount_INC = ROUND(?,1), '
                     'ModeOfPayment_INC = ?,'
-                    'Category_INC = ? WHERE ID_INC = ?',
+                    'Category_INC = ? WHERE ID_INC = ? AND User_ID = ?',
                     (date_inc.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
-                     MOP_inc.get(), cate_inc.get(), contents[0]))
+                     MOP_inc.get(), cate_inc.get(), contents[0], logged_in_user[0]))
                 connector.commit()
                 income_clear_fields()
                 list_all_income()
+                show_incsum()
                 show_balance()
                 mb.showinfo('Data edited', 'We have updated the data and stored in the database as you wanted')
                 saveedit_button2.destroy()
@@ -474,13 +716,13 @@ def edit_income():
 
     view_income_details()
     saveedit_button2 = CTkButton(master=mainframe3left, text='Save Edit', command=edit_existing_income,
-                                 corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                                 fg_color="#000000")
-    saveedit_button2.place(relx=0.3, rely=0.7)
+                                 corner_radius=5, hover_color="#00456D", font=('Microsoft YaHei UI Light', 13, 'bold'),
+                                 fg_color="#007CC2")
+    saveedit_button2.place(relx=0.3, rely=0.75)
 
 
 def show_incsum():
-    cursor2.execute('SELECT Amount_INC FROM Income')
+    cursor2.execute('SELECT Amount_INC FROM Income WHERE User_ID = ?', (logged_in_user[0],))
     result2 = cursor2.fetchall()
 
     total2 = sum(float(row[0]) for row in result2)
@@ -489,24 +731,42 @@ def show_incsum():
 
 # Display Balance
 def show_balance():
-    cursor1.execute('SELECT Amount_EXP FROM Expenses')
+    cursor1.execute('SELECT Amount_EXP FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
     result3 = cursor1.fetchall()
     total3 = sum(float(row[0]) for row in result3)
 
-    cursor2.execute('SELECT Amount_INC FROM Income')
+    cursor2.execute('SELECT Amount_INC FROM Income WHERE User_ID = ?', (logged_in_user[0],))
     result4 = cursor2.fetchall()
     total4 = sum(float(row[0]) for row in result4)
 
     total5 = total4 - total3
 
-    balancecounter.configure(text="RM {:.2f}".format(total5))
+    balancecounter.configure(text="RM {:.2f}".format(total5), text_color='green')
 
+    if total5 < 0:
+        balancecounter.configure(text="RM {:.2f}".format(total5), text_color='red')
+    else:
+        balancecounter.configure(text="RM {:.2f}".format(total5), text_color='green')
+
+def show_username():
+    cursor10.execute('SELECT User_username FROM Users WHERE User_ID = ?', (logged_in_user[0],))
+    dispuser = cursor10.fetchone()
+    cleaned_data = [''.join(map(str, item)).replace("(", "").replace(")", "").replace("'", "").replace(",", "") for item in dispuser]
+
+    for item in cleaned_data:
+        welclabel.configure(text="Welcome, {}".format(item))
+
+# Exit the program completely when the 'x' button is clicked
+if logged_in_user == [None]:
+    sys.exit()
+else:
+    print('Login Successful.')
 
 ##############################################################################
 # Right mainframe (Home)
 ##############################################################################
 mainframe1 = CTkFrame(master=money_app, fg_color="#000000", height=750, width=1150, corner_radius=0)
-mainframe1.pack(fill='both', side='right', expand='true')
+mainframe1.pack(fill='y', side='right')
 
 ##############################################################################
 # Frame 1 (invisible)
@@ -517,8 +777,9 @@ frame_1.pack(fill='x', padx=10, pady=10)
 frame_1_1 = CTkFrame(master=frame_1, height=150)
 frame_1_1.pack(fill='x')
 
-welclabel = CTkLabel(master=frame_1_1, text='Welcome, User', font=('Microsoft YaHei UI Light', 18))
+welclabel = CTkLabel(master=frame_1_1, text="", font=('Microsoft YaHei UI Light', 18))
 welclabel.place(anchor='center', relx=0.5, rely=0.2)
+show_username()
 
 Bcounter = CTkLabel(master=frame_1_1, text='Balance', font=('Microsoft YaHei UI Light', 18))
 Bcounter.place(relx=0.02, rely=0.33)
@@ -590,13 +851,13 @@ table3.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
 table3.heading('Category', text='Category', anchor=CENTER)
 
 table3.column('#0', width=0, stretch=NO)
-table3.column('#1', width=50, stretch=NO)
+table3.column('#1', width=0, stretch=NO)
 table3.column('#2', width=95, stretch=NO)  # Date column
-table3.column('#3', width=150, stretch=NO)  # Payee column
-table3.column('#4', width=255, stretch=NO)  # Title column
-table3.column('#5', width=135, stretch=NO)  # Amount column
-table3.column('#6', width=105, stretch=NO)  # Mode of Payment column
-table3.column('#7', width=105, stretch=NO)  # Category column
+table3.column('#3', width=0, stretch=NO)  # Payee column
+table3.column('#4', width=255, stretch=YES)  # Title column
+table3.column('#5', width=150, stretch=NO)  # Amount column
+table3.column('#6', width=0, stretch=NO)  # Mode of Payment column
+table3.column('#7', width=130, stretch=NO)  # Category column
 
 table3.place(relx=0, y=0, relheight=1, relwidth=1)
 
@@ -633,13 +894,13 @@ table4.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
 table4.heading('Category', text='Category', anchor=CENTER)
 
 table4.column('#0', width=0, stretch=NO)
-table4.column('#1', width=50, stretch=NO)
+table4.column('#1', width=0, stretch=NO)
 table4.column('#2', width=95, stretch=NO)  # Date column
-table4.column('#3', width=150, stretch=NO)  # Payer column
-table4.column('#4', width=255, stretch=NO)  # Title column
-table4.column('#5', width=135, stretch=NO)  # Amount column
-table4.column('#6', width=105, stretch=NO)  # Mode of Payment column
-table4.column('#7', width=105, stretch=NO)  # Category column
+table4.column('#3', width=0, stretch=NO)  # Payer column
+table4.column('#4', width=255, stretch=YES)  # Title column
+table4.column('#5', width=150, stretch=NO)  # Amount column
+table4.column('#6', width=0, stretch=NO)  # Mode of Payment column
+table4.column('#7', width=130, stretch=NO)  # Category column
 
 table4.place(relx=0, y=0, relheight=1, relwidth=1)
 
@@ -651,7 +912,8 @@ show_incsum()
 ##############################################################################
 
 mainframe1left = CTkFrame(master=money_app, height=750, width=350, corner_radius=0)
-mainframe1left.pack(fill='both', side='left', expand='true')
+mainframe1left.pack(fill='y', side='left', expand='true')
+mainframe1left.pack_propagate(False)
 mainframe1left.configure(fg_color="#E64900")
 
 addexpbut = CTkButton(master=mainframe1left, text='Add Expense', height=50, font=('Microsoft YaHei UI Light', 15),
@@ -712,27 +974,27 @@ addexp_entry.bind('<FocusOut>', reset_addexp_entry)
 # Buttons in Mainframe 2
 
 save_button = CTkButton(master=mainframe2left, text='Save', command=adding_expense,
-                        corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                        fg_color="#000000", )
-save_button.place(relx=0.3, rely=0.7)
+                        corner_radius=5, hover_color="#005300", font=('Microsoft YaHei UI Light', 13, 'bold'),
+                        fg_color="green", )
+save_button.place(relx=0.3, rely=0.75)
 
-homepage_button = CTkButton(master=mainframe2left, text='Back to Home Page', command=home_frame,
-                            corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
+homepage_button = CTkButton(master=mainframe2left, text='Home', command=home_frame, width=60,
+                            corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'),
                             fg_color="#000000")
-homepage_button.place(relx=0.3, rely=0.75)
+homepage_button.place(relx=0.8, rely=0.01)
 
 delexp_button = CTkButton(master=mainframe2left, text='Delete Expense', command=remove_expense,
-                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13), fg_color="#000000")
+                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'), fg_color="#000000")
 delexp_button.place(relx=0.3, rely=0.80)
 
 selexp_button = CTkButton(master=mainframe2left, text='Edit Selected Expense', command=edit_expense,
-                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13), fg_color="#000000")
-selexp_button.place(relx=0.3, rely=0.85)
+                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'), fg_color="#000000")
+selexp_button.place(relx=0.26, rely=0.85)
 
 senexp_button = CTkButton(master=mainframe2left, text='Convert Expense to a Sentence',
                           command=selected_expense_to_words,
-                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13), fg_color="#000000")
-senexp_button.place(relx=0.22, rely=0.90)
+                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'), fg_color="#000000")
+senexp_button.place(relx=0.18, rely=0.90)
 
 # Labels/Entries in Mainframe 2
 
@@ -788,7 +1050,7 @@ table.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
 table.heading('Category', text='Category', anchor=CENTER)
 
 table.column('#0', width=0, stretch=NO)
-table.column('#1', width=50, stretch=NO)
+table.column('#1', width=0, stretch=NO)
 table.column('#2', stretch=YES)  # Date column
 table.column('#3', stretch=YES)  # Payee column
 table.column('#4', width=300, stretch=NO)  # Note column
@@ -856,27 +1118,27 @@ addinc_entry.bind('<FocusOut>', reset_addinc_entry)
 
 # Button in Frame 8
 
-save_button = CTkButton(master=mainframe3left, text='Save', command=adding_income,
-                        corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
-                        fg_color="#000000")
-save_button.place(relx=0.3, rely=0.7)
+save_button_inc = CTkButton(master=mainframe3left, text='Save', command=adding_income,
+                        corner_radius=5, hover_color="#005300", font=('Microsoft YaHei UI Light', 13, 'bold'),
+                        fg_color="green")
+save_button_inc.place(relx=0.3, rely=0.75)
 
-homepage_button = CTkButton(master=mainframe3left, text='Back to Home Page', command=home_frame,
-                            corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13),
+homepage_inc_button = CTkButton(master=mainframe3left, text='Home', command=home_frame, width=60,
+                            corner_radius=5, hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'),
                             fg_color="#000000")
-homepage_button.place(relx=0.3, rely=0.75)
+homepage_inc_button.place(relx=0.8, rely=0.01)
 
 delinc_button = CTkButton(master=mainframe3left, text='Delete Income', command=remove_income,
-                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13), fg_color="#000000")
+                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'), fg_color="#000000")
 delinc_button.place(relx=0.3, rely=0.80)
 
 selinc_button = CTkButton(master=mainframe3left, text='Edit Selected Income', command=edit_income,
-                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13), fg_color="#000000")
-selinc_button.place(relx=0.3, rely=0.85)
+                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'), fg_color="#000000")
+selinc_button.place(relx=0.28, rely=0.85)
 
 seninc_button = CTkButton(master=mainframe3left, text='Convert Income to a Sentence', command=selected_income_to_words,
-                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13), fg_color="#000000")
-seninc_button.place(relx=0.22, rely=0.90)
+                          hover_color="#808080", font=('Microsoft YaHei UI Light', 13, 'bold'), fg_color="#000000")
+seninc_button.place(relx=0.18, rely=0.90)
 
 # Labels/Entries in Mainframe 3
 
@@ -932,7 +1194,7 @@ table2.heading('Mode of Payment', text='Mode of Payment', anchor=CENTER)
 table2.heading('Category', text='Category', anchor=CENTER)
 
 table2.column('#0', width=0, stretch=NO)
-table2.column('#1', width=50, stretch=NO)
+table2.column('#1', width=0, stretch=NO)
 table2.column('#2', stretch=YES)  # Date column
 table2.column('#3', stretch=YES)  # Payer column
 table2.column('#4', width=300, stretch=NO)  # Note column
