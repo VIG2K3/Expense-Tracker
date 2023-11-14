@@ -450,9 +450,9 @@ def remove_expense():  # Deletes the selected expense
         list_all_expenses()
         show_expsum()
         show_balance()
+        mb.showinfo('Record Deletion Successful!', 'The record has been deleted successfully.')
         show_budget()
-        mb.showinfo('Record Deletion Successful!',
-                    'The record has been deleted successfully.')
+
 
 
 def delete_all_expenses():
@@ -514,9 +514,9 @@ def adding_expense():  # Adds a new expense
             list_all_expenses()
             show_expsum()
             show_balance()
-            show_budget()
             mb.showinfo('Expense Added',
                         'The expense has been added to the database.')
+            show_budget()
     except sqlite3.IntegrityError:
         mb.showerror("Error", "Expense already exists. Try again.")
 
@@ -553,9 +553,9 @@ def edit_expense():  # Edits selected expense
                 list_all_expenses()
                 show_expsum()
                 show_balance()
-                show_budget()
                 mb.showinfo('Record Edited Successfully', 'The record has been updated successfully!')
                 saveedit_button1.destroy()
+                show_budget()
                 return
         except sqlite3.IntegrityError:
             mb.showerror("Error", "Expense already exists. Try again.")
