@@ -5,11 +5,12 @@ from tkcalendar import DateEntry
 import datetime
 import tkinter.messagebox as mb
 from PIL import Image
+from winotify import Notification, audio
 import sv_ttk
 import hashlib
 import sqlite3
 
-# Database Connectionm
+# Database Connection
 connector = sqlite3.connect("Expense Tracker ccc.db")
 cursor1 = connector.cursor()
 cursor2 = connector.cursor()
@@ -19,7 +20,7 @@ cursor10 = connector.cursor()
 # Creating the Users table
 cursor10.execute('''
     CREATE TABLE IF NOT EXISTS Users (
-        User_ID INTEGER PRIMARY KEY,
+        User_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         User_username VARCHAR UNIQUE NOT NULL,
         User_password VARCHAR NOT NULL
     )
@@ -30,14 +31,14 @@ cursor1.execute(
     'CREATE TABLE IF NOT EXISTS Expenses '
     '(ID_EXP INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
     'Date_EXP DATE, '
-    'Payee TEXT, '
-    'Note_EXP TEXT, '
+    'Payee VARCHAR(50), '
+    'Note_EXP VARCHAR(100), '
     'Amount_EXP FLOAT, '
-    'ModeOfPayment_EXP TEXT, '
+    'ModeOfPayment_EXP VARCHAR(20), '
     'Category_EXP VARCHAR(20),'
     'User_ID INTEGER,'
     'FOREIGN KEY (User_ID) REFERENCES Users(User_ID)'
-    'CONSTRAINT unique_exp UNIQUE (Date_EXP, Note_EXP))'
+    'CONSTRAINT unique_exp UNIQUE (Date_EXP, Note_EXP, User_ID))'
 )
 
 # Creating the Income table
@@ -45,14 +46,14 @@ cursor2.execute(
     'CREATE TABLE IF NOT EXISTS Income '
     '(ID_INC INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
     'Date_INC DATE, '
-    'Payer_INC TEXT, '
-    'Note_INC TEXT, '
+    'Payer_INC VARCHAR(50), '
+    'Note_INC VARCHAR(100), '
     'Amount_INC FLOAT, '
-    'ModeOfPayment_INC TEXT, '
+    'ModeOfPayment_INC VARCHAR(20), '
     'Category_INC VARCHAR(20),'
     'User_ID INTEGER,'
     'FOREIGN KEY (User_ID) REFERENCES Users(User_ID)'
-    'CONSTRAINT unique_exp UNIQUE (Date_INC, Note_INC))'
+    'CONSTRAINT unique_inc UNIQUE (Date_INC, Note_INC, User_ID))'
 )
 
 # Creating the Budget table
@@ -361,8 +362,6 @@ def home_frame():  # Adds only the Home UI Frame
     mainframe3left.pack_forget()
     frame_6_1.pack_forget()
     frame_8_1.pack_forget()
-    # clear_fields()
-    income_clear_fields()
     mainframe1left.pack(fill='both', side='left', expand='true')
     frame_3_1.pack(side='left', padx=13, pady=10)
     frame_3_2.pack(side='right', padx=13, pady=10)
@@ -452,6 +451,7 @@ def remove_expense():  # Deletes the selected expense
         list_all_expenses()
         show_expsum()
         show_balance()
+        show_budget()
         mb.showinfo('Record Deletion Successful!',
                     'The record has been deleted successfully.')
 
@@ -469,6 +469,7 @@ def delete_all_expenses():
         list_all_expenses()
         show_expsum()
         show_balance()
+        show_budget()
         mb.showinfo('All Expenses Deleted', 'All expense records were successfully deleted.')
     else:
         mb.showinfo('Task Abortion', 'The task was aborted.')
@@ -513,6 +514,7 @@ def adding_expense():  # Adds a new expense
             list_all_expenses()
             show_expsum()
             show_balance()
+            show_budget()
             mb.showinfo('Expense Added',
                         'The expense has been added to the database.')
     except sqlite3.IntegrityError:
@@ -550,6 +552,7 @@ def edit_expense():  # Edits selected expense
                 list_all_expenses()
                 show_expsum()
                 show_balance()
+                show_budget()
                 mb.showinfo('Record Edited Successfully', 'The record has been updated successfully!')
                 saveedit_button1.destroy()
                 return
@@ -820,23 +823,29 @@ def load_budget():  # Loads the saved budget if there is one
     bdata = cursor3.fetchone()
     budget_button = CTkButton(master=mainframe1left, text="Save Budget", fg_color='green', hover_color="#005300",
                               font=('Microsoft YaHei UI Light', 13, 'bold'), command=save_budget)
-    budget_button.place(relx=0.5, rely=0.8, anchor='center')
+    buddel_button = CTkButton(master=mainframe1left, text="Delete Budget", fg_color='black', hover_color="#005300",
+                              font=('Microsoft YaHei UI Light', 13, 'bold'), command=delete_budget)
+    buddel_button.place(relx=0.5, rely=0.85, anchor='center')
 
     if bdata is None:
-        return
+        budget_button.place(relx=0.5, rely=0.8, anchor='center')
+        budget_label.configure(text='Set A Budget')
     else:
         budget_button.destroy()
         show_budget()
 
         def edit_budget():  # Edits the existing budget amount
-            budget_amount1 = budget_entry1.get()
-            if budget_amount1 and budget_amount1.isdigit():
-                connector.execute('UPDATE Budget SET Budget_amount = ? WHERE User_ID = ?',
-                                  (budget_amount1, logged_in_user[0],))
-                connector.commit()
-                mb.showinfo('Budget Updated', 'Budget has been updated successfully.')
-                show_budget()
-            else:
+            try:
+                budget_amount1 = int(budget_entry1.get())
+                if budget_amount1 <= 0:
+                    mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
+                else:
+                    connector.execute('UPDATE Budget SET Budget_amount = ? WHERE User_ID = ?',
+                                      (budget_amount1, logged_in_user[0],))
+                    connector.commit()
+                    mb.showinfo('Budget Updated', 'Budget has been updated successfully.')
+                    show_budget()
+            except ValueError:
                 mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
 
         budget_entry1 = CTkEntry(master=mainframe1left, height=30, width=80)
@@ -848,19 +857,41 @@ def load_budget():  # Loads the saved budget if there is one
 
 
 def save_budget():  # Saves a new budget
-    budget_amount = budget_entry.get()
-    budget_button = CTkButton(master=mainframe1left, text="Save Budget", fg_color='green', hover_color="#005300",
-                              font=('Microsoft YaHei UI Light', 13, 'bold'), command=save_budget)
-    budget_button.place(relx=0.5, rely=0.8, anchor='center')
-    if budget_amount and budget_amount.isdigit():
-        connector.execute('INSERT INTO Budget (Budget_amount, User_ID) VALUES (?,?)',
-                          (budget_amount, logged_in_user[0]))
-        connector.commit()
-        mb.showinfo('Budget Saved', 'Budget has been set successfully.')
-        budget_button.destroy()
-        load_budget()
-    else:
+    try:
+        budget_amount = int(budget_entry.get())
+        budget_button = CTkButton(master=mainframe1left, text="Save Budget", fg_color='green', hover_color="#005300",
+                                  font=('Microsoft YaHei UI Light', 13, 'bold'), command=save_budget)
+        budget_button.place(relx=0.5, rely=0.8, anchor='center')
+        if budget_amount <= 0:
+            mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
+        else:
+            connector.execute('INSERT INTO Budget (Budget_amount, User_ID) VALUES (?,?)',
+                              (budget_amount, logged_in_user[0]))
+            connector.commit()
+            mb.showinfo('Budget Saved', 'Budget has been set successfully.')
+            budget_button.destroy()
+            load_budget()
+    except ValueError:
         mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
+
+
+def delete_budget():  # Deletes the user's budget
+    cursor3.execute('SELECT Budget_amount FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
+    bdata1 = cursor3.fetchone()
+
+    if bdata1 is None:
+        mb.showerror('Error', 'No budget to be deleted.')
+    else:
+        surety1 = mb.askyesno('Confirmation', 'Are you sure about deleting your budget?', icon='warning')
+
+        if surety1:
+            connector.execute('DELETE FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
+            connector.commit()
+            load_budget()
+
+            mb.showinfo('Budget Deleted', 'Budget was successfully deleted.')
+        else:
+            mb.showinfo('Task Abortion', 'The task was aborted.')
 
 
 def show_budget():  # Displays the user's budget
@@ -869,6 +900,92 @@ def show_budget():  # Displays the user's budget
     bud1 = sum(float(row[0]) for row in b_label)
 
     budget_label.configure(text='Budget: RM {}'.format(bud1))
+
+    cursor1.execute('SELECT Amount_EXP FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
+    result10 = cursor1.fetchall()
+
+    total10 = sum(float(row[0]) for row in result10)
+
+    budbalance = (total10 / bud1) * 100
+
+    def notifybudget60():
+        toast = Notification(app_id="Acre ",
+                             title="Expenses Approaching Budget Amount",
+                             msg="Your total expenses are more than 60% of your set budget.",
+                             duration="short",
+                             icon=r"C:\Users\LIM TZE TA\PycharmProjects\project1\Acre Symbol.png")
+
+        toast.set_audio(audio.SMS, loop=False)
+        toast.show()
+
+    def notifybudget80():
+        toast = Notification(app_id="Acre ",
+                             title="Expenses Approaching Budget Amount",
+                             msg="Your total expenses are more than 80% of your set budget.",
+                             duration="short",
+                             icon=r"C:\Users\LIM TZE TA\PycharmProjects\project1\Acre Symbol.png")
+
+        toast.set_audio(audio.SMS, loop=False)
+        toast.show()
+
+    def notifybudget95():
+        toast = Notification(app_id="Acre ",
+                             title="Expenses Approaching Budget Amount",
+                             msg="Your total expenses are more than 95% of your set budget.",
+                             duration="short",
+                             icon=r"C:\Users\LIM TZE TA\PycharmProjects\project1\Acre Symbol.png")
+
+        toast.set_audio(audio.SMS, loop=False)
+        toast.show()
+
+    def notifybudget100():
+        toast = Notification(app_id="Acre ",
+                             title="Expenses Has Exceeded Budget Amount",
+                             msg="Your total expenses have exceeded your set budget.",
+                             duration="short",
+                             icon=r"C:\Users\LIM TZE TA\PycharmProjects\project1\Acre Symbol.png")
+
+        toast.set_audio(audio.SMS, loop=False)
+        toast.show()
+
+    if b_label is None:
+        return
+    else:
+        if budbalance <= 60.0:
+            return
+        elif 60.0 < budbalance <= 80.0:
+            notifybudget60()
+        elif 80.0 < budbalance <= 95.0:
+            notifybudget80()
+        elif 95.0 < budbalance < 100.0:
+            notifybudget95()
+        else:
+            notifybudget100()
+
+
+def treeview_sort_column(tv, col, reverse):  # Sorts columns in ascending or descending order
+    # Retrieve values and their data types
+    data = [(tv.set(k, col), k, type(tv.set(k, col))) for k in tv.get_children('')]
+
+    # Define a custom sorting function
+    def custom_sort(item):
+        value, _, data_type = item
+        try:
+            # Try to convert to float, if possible
+            value = float(value)
+            return 0, value  # Sort floats first
+        except ValueError:
+            return 1, value  # Sort strings and other types second
+
+    # Sort based on the custom sorting function
+    data.sort(key=custom_sort, reverse=reverse)
+
+    # Rearrange items in sorted positions
+    for index, (_, k, _) in enumerate(data):
+        tv.move(k, '', index)
+
+    # Reverse sort next time (toggle between ascending and descending)
+    tv.heading(col, command=lambda: treeview_sort_column(tv, col, not reverse))
 
 
 # Exits the program completely when the 'x' button is clicked
@@ -935,9 +1052,9 @@ frame_3_1 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", width=575, height=65
 frame_3_1.pack(side='left', padx=13, pady=10)
 
 # Expenses Treeview Frame (Homepage)
-
+columns3 = ('ID', 'Date', 'Payee', 'Note', 'Amount', "Mode of Payment", 'Category')
 table3 = ttk.Treeview(frame_3_1, selectmode=BROWSE,
-                      columns=('ID', 'Date', 'Payee', 'Note', 'Amount', 'Mode of Payment', 'Category'))
+                      columns=columns3)
 
 X_Scroller = CTkScrollbar(table3, orientation=HORIZONTAL, command=table3.xview)
 Y_Scroller = CTkScrollbar(table3, orientation=VERTICAL, command=table3.yview)
@@ -967,6 +1084,9 @@ table3.place(relx=0, y=0, relheight=1, relwidth=1)
 
 list_all_expenses1()
 show_expsum()
+for col in columns3:
+    table3.heading(col, text=col, command=lambda _col=col: \
+        treeview_sort_column(table3, _col, False))
 
 # Frame 3_2
 
@@ -974,9 +1094,8 @@ frame_3_2 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", width=575, height=65
 frame_3_2.pack(side='right', padx=13, pady=10)
 
 # Income Treeview Frame (Homepage)
-
-table4 = ttk.Treeview(frame_3_2, selectmode=BROWSE, columns=('ID', 'Date', 'Payer', 'Note', 'Amount',
-                                                             "Mode of Payment", 'Category'))
+columns4 = ('ID', 'Date', 'Payer', 'Note', 'Amount', "Mode of Payment", 'Category')
+table4 = ttk.Treeview(frame_3_2, selectmode=BROWSE, columns=columns4)
 
 X_Scroller_inc = CTkScrollbar(table4, orientation=HORIZONTAL, command=table4.xview)
 Y_Scroller_inc = CTkScrollbar(table4, orientation=VERTICAL, command=table4.yview)
@@ -1007,6 +1126,10 @@ table4.place(relx=0, y=0, relheight=1, relwidth=1)
 list_all_income1()
 show_incsum()
 
+for col in columns4:
+    table4.heading(col, text=col, command=lambda _col=col: \
+        treeview_sort_column(table4, _col, False))
+
 ##############################################################################
 # Left mainframe (Home)
 ##############################################################################
@@ -1016,7 +1139,7 @@ mainframe1left.pack(fill='y', side='left', expand='true')
 mainframe1left.pack_propagate(False)
 mainframe1left.configure(fg_color="#E64900")
 
-budget_label = CTkLabel(master=mainframe1left, text="Set a Budget", font=('Microsoft YaHei UI Light', 18, 'bold'))
+budget_label = CTkLabel(master=mainframe1left, text="", font=('Microsoft YaHei UI Light', 18, 'bold'))
 budget_label.place(relx=0.5, rely=0.7, anchor='center')
 
 budget_entry = CTkEntry(master=mainframe1left, height=30, width=80)
@@ -1141,8 +1264,9 @@ category.configure(width=10)
 frame_6_1 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", height=650, width=1150, border_width=2)
 frame_6_1.pack()
 
+columns1 = ('ID', 'Date', 'Payee', 'Note', 'Amount', 'Mode of Payment', 'Category')
 table = ttk.Treeview(frame_6_1, selectmode=BROWSE,
-                     columns=('ID', 'Date', 'Payee', 'Note', 'Amount', 'Mode of Payment', 'Category'))
+                     columns=columns1)
 
 X_Scroller = CTkScrollbar(table, orientation=HORIZONTAL, command=table.xview)
 Y_Scroller = CTkScrollbar(table, orientation=VERTICAL, command=table.yview)
@@ -1172,6 +1296,9 @@ table.place(relx=0, y=0, relheight=1, relwidth=1)
 
 list_all_expenses()
 show_expsum()
+for col in columns1:
+    table.heading(col, text=col, command=lambda _col=col: \
+        treeview_sort_column(table, _col, False))
 
 ##############################################################################
 # Main Frame3 (Add Income)
@@ -1288,8 +1415,8 @@ category_inc.configure(width=10)
 frame_8_1 = CTkFrame(master=mainframe1, fg_color="#FFFFFF", height=650, width=1150, border_width=2)
 frame_8_1.pack(side='right')
 
-table2 = ttk.Treeview(frame_8_1, selectmode=BROWSE, columns=('ID', 'Date', 'Payer', 'Note', 'Amount',
-                                                             "Mode of Payment", 'Category'))
+columns2 = ('ID', 'Date', 'Payer', 'Note', 'Amount', "Mode of Payment", 'Category')
+table2 = ttk.Treeview(frame_8_1, selectmode=BROWSE, columns=columns2)
 
 X_Scroller_inc = CTkScrollbar(table2, orientation=HORIZONTAL, command=table2.xview)
 Y_Scroller_inc = CTkScrollbar(table2, orientation=VERTICAL, command=table2.yview)
@@ -1318,6 +1445,9 @@ table2.column('#7', stretch=YES)  # Category column
 table2.place(relx=0, y=0, relheight=1, relwidth=1)
 
 list_all_income()
+for col in columns2:
+    table2.heading(col, text=col, command=lambda _col=col: \
+        treeview_sort_column(table2, _col, False))
 
 # Let the Home Menu appear first
 
