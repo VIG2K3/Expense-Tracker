@@ -1,6 +1,5 @@
 from customtkinter import *
-from tkinter import OptionMenu
-from tkinter import ttk
+from tkinter import OptionMenu, ttk
 from tkcalendar import DateEntry
 import datetime
 import tkinter.messagebox as mb
@@ -505,9 +504,10 @@ def adding_expense():  # Adds a new expense
         else:
             (connector.execute('INSERT INTO Expenses (Date_EXP, Payee, Note_EXP, Amount_EXP, ModeOfPayment_EXP, '
                                'Category_EXP, User_ID)'
-                               'VALUES (?,LTRIM(RTRIM(?)),LTRIM(RTRIM(?)),ROUND(?,1),?,?,?)', (date_exp.get_date(), payee.get(), note_exp.get(),
-                                                                   amnt_exp.get(), MOP_exp.get(), cate_exp.get(),
-                                                                   logged_in_user[0])))
+                               'VALUES (?,LTRIM(RTRIM(?)),LTRIM(RTRIM(?)),ROUND(?,1),?,?,?)',
+                               (date_exp.get_date(), payee.get(), note_exp.get(),
+                                amnt_exp.get(), MOP_exp.get(), cate_exp.get(),
+                                logged_in_user[0])))
 
             connector.commit()
             clear_fields()
@@ -543,7 +543,8 @@ def edit_expense():  # Edits selected expense
                              "Please fill all the missing fields before adding!")
             else:
                 connector.execute(
-                    'UPDATE Expenses SET Date_EXP = ?, Payee = LTRIM(RTRIM(?)), Note_EXP = LTRIM(RTRIM(?)), Amount_EXP = ROUND(?,1),'
+                    'UPDATE Expenses SET Date_EXP = ?, Payee = LTRIM(RTRIM(?)), Note_EXP = LTRIM(RTRIM(?)), '
+                    'Amount_EXP = ROUND(?,1),'
                     'ModeOfPayment_EXP = ?, Category_EXP = ? WHERE ID_EXP = ? AND User_ID = ?',
                     (date_exp.get_date(), payee.get(), note_exp.get(), amnt_exp.get(),
                      MOP_exp.get(), cate_exp.get(), contents[0], logged_in_user[0]))
@@ -752,7 +753,8 @@ def edit_income():  # Edits the selected income
             else:
 
                 connector.execute(
-                    'UPDATE Income SET Date_INC = ?, Payer_INC = LTRIM(RTRIM(?)), Note_INC = LTRIM(RTRIM(?)), Amount_INC = ROUND(?,1), '
+                    'UPDATE Income SET Date_INC = ?, Payer_INC = LTRIM(RTRIM(?)), Note_INC = LTRIM(RTRIM(?)), '
+                    'Amount_INC = ROUND(?,1),'
                     'ModeOfPayment_INC = ?,'
                     'Category_INC = ? WHERE ID_INC = ? AND User_ID = ?',
                     (date_inc.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
@@ -823,13 +825,12 @@ def load_budget():  # Loads the saved budget if there is one
     bdata = cursor3.fetchone()
     budget_button = CTkButton(master=mainframe1left, text="Save Budget", fg_color='green', hover_color="#005300",
                               font=('Microsoft YaHei UI Light', 13, 'bold'), command=save_budget)
-    buddel_button = CTkButton(master=mainframe1left, text="Delete Budget", fg_color='black', hover_color="#005300",
-                              font=('Microsoft YaHei UI Light', 13, 'bold'), command=delete_budget)
-    buddel_button.place(relx=0.5, rely=0.85, anchor='center')
+    budget_entry1 = CTkEntry(master=mainframe1left, height=30, width=80)
 
     if bdata is None:
         budget_button.place(relx=0.5, rely=0.8, anchor='center')
         budget_label.configure(text='Set A Budget')
+        budget_entry1.destroy()
     else:
         budget_button.destroy()
         show_budget()
@@ -848,12 +849,34 @@ def load_budget():  # Loads the saved budget if there is one
             except ValueError:
                 mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
 
-        budget_entry1 = CTkEntry(master=mainframe1left, height=30, width=80)
         budget_entry1.place(relx=0.5, rely=0.75, anchor='center')
         editbudget_button = CTkButton(master=mainframe1left, text="Edit Budget", hover_color="#00456D",
                                       font=('Microsoft YaHei UI Light', 13, 'bold'),
                                       fg_color="#007CC2", command=edit_budget)
         editbudget_button.place(relx=0.5, rely=0.8, anchor='center')
+
+    def delete_budget():  # Deletes the user's budget
+        cursor3.execute('SELECT Budget_amount FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
+        bdata1 = cursor3.fetchone()
+
+        if bdata1 is None:
+            mb.showerror('Error', 'No budget to be deleted.')
+        else:
+            surety1 = mb.askyesno('Confirmation', 'Are you sure about deleting your budget?', icon='warning')
+
+            if surety1:
+                connector.execute('DELETE FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
+                connector.commit()
+                load_budget()
+                budget_entry1.destroy()
+
+                mb.showinfo('Budget Deleted', 'Budget was successfully deleted.')
+            else:
+                mb.showinfo('Task Abortion', 'The task was aborted.')
+
+    buddel_button = CTkButton(master=mainframe1left, text="Delete Budget", fg_color='black', hover_color="#005300",
+                              font=('Microsoft YaHei UI Light', 13, 'bold'), command=delete_budget)
+    buddel_button.place(relx=0.5, rely=0.85, anchor='center')
 
 
 def save_budget():  # Saves a new budget
@@ -873,25 +896,6 @@ def save_budget():  # Saves a new budget
             load_budget()
     except ValueError:
         mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
-
-
-def delete_budget():  # Deletes the user's budget
-    cursor3.execute('SELECT Budget_amount FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
-    bdata1 = cursor3.fetchone()
-
-    if bdata1 is None:
-        mb.showerror('Error', 'No budget to be deleted.')
-    else:
-        surety1 = mb.askyesno('Confirmation', 'Are you sure about deleting your budget?', icon='warning')
-
-        if surety1:
-            connector.execute('DELETE FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
-            connector.commit()
-            load_budget()
-
-            mb.showinfo('Budget Deleted', 'Budget was successfully deleted.')
-        else:
-            mb.showinfo('Task Abortion', 'The task was aborted.')
 
 
 def show_budget():  # Displays the user's budget
