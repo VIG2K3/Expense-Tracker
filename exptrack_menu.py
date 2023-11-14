@@ -505,7 +505,7 @@ def adding_expense():  # Adds a new expense
         else:
             (connector.execute('INSERT INTO Expenses (Date_EXP, Payee, Note_EXP, Amount_EXP, ModeOfPayment_EXP, '
                                'Category_EXP, User_ID)'
-                               'VALUES (?,?,?,ROUND(?,1),?,?,?)', (date_exp.get_date(), payee.get(), note_exp.get(),
+                               'VALUES (?,LTRIM(RTRIM(?)),LTRIM(RTRIM(?)),ROUND(?,1),?,?,?)', (date_exp.get_date(), payee.get(), note_exp.get(),
                                                                    amnt_exp.get(), MOP_exp.get(), cate_exp.get(),
                                                                    logged_in_user[0])))
 
@@ -543,7 +543,7 @@ def edit_expense():  # Edits selected expense
                              "Please fill all the missing fields before adding!")
             else:
                 connector.execute(
-                    'UPDATE Expenses SET Date_EXP = ?, Payee = ?, Note_EXP = ?, Amount_EXP = ROUND(?,1),'
+                    'UPDATE Expenses SET Date_EXP = ?, Payee = LTRIM(RTRIM(?)), Note_EXP = LTRIM(RTRIM(?)), Amount_EXP = ROUND(?,1),'
                     'ModeOfPayment_EXP = ?, Category_EXP = ? WHERE ID_EXP = ? AND User_ID = ?',
                     (date_exp.get_date(), payee.get(), note_exp.get(), amnt_exp.get(),
                      MOP_exp.get(), cate_exp.get(), contents[0], logged_in_user[0]))
@@ -696,7 +696,7 @@ def adding_income():  # Adds a new income
         else:
             # If all fields are filled, insert the data into the database
             connector.execute('INSERT INTO Income (Date_INC, Payer_INC, Note_INC, Amount_INC, '
-                              'ModeOfPayment_INC, Category_INC, User_ID) VALUES (?, ?, ?, '
+                              'ModeOfPayment_INC, Category_INC, User_ID) VALUES (?, LTRIM(RTRIM(?)), LTRIM(RTRIM(?)), '
                               'ROUND(?,1), ?, ?, ?)',
                               (date_inc.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
                                MOP_inc.get(), cate_inc.get(), logged_in_user[0]))
@@ -752,7 +752,7 @@ def edit_income():  # Edits the selected income
             else:
 
                 connector.execute(
-                    'UPDATE Income SET Date_INC = ?, Payer_INC = ?, Note_INC = ?, Amount_INC = ROUND(?,1), '
+                    'UPDATE Income SET Date_INC = ?, Payer_INC = LTRIM(RTRIM(?)), Note_INC = LTRIM(RTRIM(?)), Amount_INC = ROUND(?,1), '
                     'ModeOfPayment_INC = ?,'
                     'Category_INC = ? WHERE ID_INC = ? AND User_ID = ?',
                     (date_inc.get_date(), payer.get(), note_inc.get(), amnt_inc.get(),
