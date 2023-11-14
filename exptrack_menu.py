@@ -874,7 +874,7 @@ def load_budget():  # Loads the saved budget if there is one
             else:
                 mb.showinfo('Task Abortion', 'The task was aborted.')
 
-    buddel_button = CTkButton(master=mainframe1left, text="Delete Budget", fg_color='black', hover_color="#005300",
+    buddel_button = CTkButton(master=mainframe1left, text="Delete Budget", fg_color='black', hover_color="#808080",
                               font=('Microsoft YaHei UI Light', 13, 'bold'), command=delete_budget)
     buddel_button.place(relx=0.5, rely=0.85, anchor='center')
 
