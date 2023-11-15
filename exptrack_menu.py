@@ -932,10 +932,7 @@ def show_budget():  # Displays the user's budget
     b_label = cursor3.fetchall()
     bud1 = sum(float(row[0]) for row in b_label)
 
-    if bud1 == 0.0:
-        budget_label.configure(text='Set A Budget')
-    else:
-        budget_label.configure(text='Budget: RM {}'.format(bud1))
+    budget_label.configure(text='Budget: RM {}'.format(bud1))
 
     cursor1.execute('SELECT Amount_EXP FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
     result10 = cursor1.fetchall()
@@ -944,7 +941,7 @@ def show_budget():  # Displays the user's budget
 
     budbalance = (total10 / bud1) * 100
 
-    def notifybudget60():
+    def notify_budget60():
         toast = Notification(app_id="Acre ",
                              title="Expenses Approaching Budget Amount",
                              msg="Your total expenses are more than 60% of your set budget.",
@@ -954,7 +951,7 @@ def show_budget():  # Displays the user's budget
         toast.set_audio(audio.SMS, loop=False)
         toast.show()
 
-    def notifybudget80():
+    def notify_budget80():
         toast = Notification(app_id="Acre ",
                              title="Expenses Approaching Budget Amount",
                              msg="Your total expenses are more than 80% of your set budget.",
@@ -964,7 +961,7 @@ def show_budget():  # Displays the user's budget
         toast.set_audio(audio.SMS, loop=False)
         toast.show()
 
-    def notifybudget95():
+    def notify_budget95():
         toast = Notification(app_id="Acre ",
                              title="Expenses Approaching Budget Amount",
                              msg="Your total expenses are more than 95% of your set budget.",
@@ -974,7 +971,7 @@ def show_budget():  # Displays the user's budget
         toast.set_audio(audio.SMS, loop=False)
         toast.show()
 
-    def notifybudget100():
+    def notify_budget100():
         toast = Notification(app_id="Acre ",
                              title="Expenses Has Exceeded Budget Amount",
                              msg="Your total expenses have exceeded your set budget.",
@@ -984,19 +981,15 @@ def show_budget():  # Displays the user's budget
         toast.set_audio(audio.SMS, loop=False)
         toast.show()
 
-    if b_label is None:
-        return
-    else:
-        if budbalance < 60.0:
-            return
-        elif 60.0 <= budbalance < 80.0:
-            notifybudget60()
+    if b_label is not None:
+        if 60.0 <= budbalance < 80.0:
+            notify_budget60()
         elif 80.0 <= budbalance < 95.0:
-            notifybudget80()
+            notify_budget80()
         elif 95.0 <= budbalance < 100.0:
-            notifybudget95()
-        else:
-            notifybudget100()
+            notify_budget95()
+        elif budbalance >= 100.0:
+            notify_budget100()
 
 
 def treeview_sort_column(tv, col, reverse):  # Sorts columns in ascending or descending order
