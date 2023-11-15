@@ -225,11 +225,11 @@ heading.place(relx=0.5, rely=0.1, anchor='center')
 
 
 # Username frame
-def reset_username_signup(event):  # Same as reset_username_entry but in the Sign Up page
+def reset_username_signup(event):  # Same as reset_username_entry but in the Sign-Up page
     register_username_entry.delete(0, "end")
 
 
-def clear_username_signup(event):  # Same as clear_username_entry but in the Sign Up page
+def clear_username_signup(event):  # Same as clear_username_entry but in the Sign-Up page
     name = register_username_entry.get()
     if name == '':
         register_username_entry.insert(0, 'Username')
@@ -454,7 +454,6 @@ def remove_expense():  # Deletes the selected expense
         show_budget()
 
 
-
 def delete_all_expenses():
     surety = mb.askyesno('Confirmation', 'Are you sure about deleting all expense records?', icon='warning')
 
@@ -468,8 +467,8 @@ def delete_all_expenses():
         list_all_expenses()
         show_expsum()
         show_balance()
-        show_budget()
         mb.showinfo('All Expenses Deleted', 'All expense records were successfully deleted.')
+        show_budget()
     else:
         mb.showinfo('Task Abortion', 'The task was aborted.')
 
@@ -492,6 +491,9 @@ def adding_expense():  # Adds a new expense
 
     try:
         float(amnt_exp.get())
+        if float(amnt_exp.get()) <= 0.0:
+            mb.showerror('Inappropriate Value', 'Values 0 or less are not accepted.')
+            return
     except:
         mb.showerror('Inappropriate Value', 'Please enter numbers in the expense entry.')
         return
@@ -524,6 +526,16 @@ def adding_expense():  # Adds a new expense
 def edit_expense():  # Edits selected expense
     global table
 
+    if not table.selection():
+        mb.showerror('No Expense Selected',
+                     'You have not selected an expense in the table to edit.')
+        return
+
+    delexp_button.place_forget()
+    delallexp_button.place_forget()
+    selexp_button.place_forget()
+    senexp_button.place_forget()
+
     def edit_existing_expense():
         global date_exp, amnt_exp, note_exp, payee, MOP_exp, cate_exp
         global connector, table
@@ -532,6 +544,9 @@ def edit_expense():  # Edits selected expense
 
         try:
             float(amnt_exp.get())
+            if float(amnt_exp.get()) <= 0.0:
+                mb.showerror('Inappropriate Value', 'Values 0 or less are not accepted.')
+                return
         except:
             mb.showerror('Inappropriate Value', 'Please enter numbers in the expense entry.')
             return
@@ -555,15 +570,14 @@ def edit_expense():  # Edits selected expense
                 show_balance()
                 mb.showinfo('Record Edited Successfully', 'The record has been updated successfully!')
                 saveedit_button1.destroy()
+                delexp_button.place(relx=0.5, rely=0.80, anchor='center')
+                delallexp_button.place(relx=0.5, rely=0.95, anchor='center')
+                selexp_button.place(relx=0.5, rely=0.85, anchor='center')
+                senexp_button.place(relx=0.5, rely=0.90, anchor='center')
                 show_budget()
                 return
         except sqlite3.IntegrityError:
             mb.showerror("Error", "Expense already exists. Try again.")
-
-    if not table.selection():
-        mb.showerror('No Expense Selected',
-                     'You have not selected an expense in the table to edit.')
-        return
 
     view_expense_details()
     saveedit_button1 = CTkButton(master=mainframe2left, text='Save Edit', command=edit_existing_expense,
@@ -684,7 +698,10 @@ def adding_income():  # Adds a new income
 
     try:
         float(amnt_inc.get())
-    except ValueError:
+        if float(amnt_inc.get()) <= 0.0:
+            mb.showerror('Inappropriate Value', 'Values 0 or less are not accepted.')
+            return
+    except:
         mb.showerror('Inappropriate Value', 'Please enter numbers in the income entry.')
         return
 
@@ -732,6 +749,16 @@ def view_income_details():
 def edit_income():  # Edits the selected income
     global table2
 
+    if not table2.selection():
+        mb.showerror('No Income Selected',
+                     'You have not selected any income in the table to edit.')
+        return
+
+    delinc_button.place_forget()
+    delallinc_button.place_forget()
+    selinc_button.place_forget()
+    seninc_button.place_forget()
+
     def edit_existing_income():
         global date_inc, amnt_inc, note_inc, payee, MOP_inc, cate_inc
         global connector, table2
@@ -741,6 +768,9 @@ def edit_income():  # Edits the selected income
 
         try:
             float(amnt_inc.get())
+            if float(amnt_inc.get()) <= 0.0:
+                mb.showerror('Inappropriate Value', 'Values 0 or less are not accepted.')
+                return
         except ValueError:
             mb.showerror('Inappropriate Value', 'Please enter numbers in the income entry.')
             return
@@ -766,14 +796,13 @@ def edit_income():  # Edits the selected income
                 show_balance()
                 mb.showinfo('Record Edited Successfully', 'The record has been updated successfully!')
                 saveedit_button2.destroy()
+                delinc_button.place(relx=0.5, rely=0.80, anchor='center')
+                delallinc_button.place(relx=0.5, rely=0.95, anchor='center')
+                selinc_button.place(relx=0.5, rely=0.85, anchor='center')
+                seninc_button.place(relx=0.5, rely=0.90, anchor='center')
                 return
         except sqlite3.IntegrityError:
             mb.showerror("Error", "Income already exists. Try again.")
-
-    if not table2.selection():
-        mb.showerror('No Income Selected',
-                     'You have not selected any income in the table to edit.')
-        return
 
     view_income_details()
     saveedit_button2 = CTkButton(master=mainframe3left, text='Save Edit', command=edit_existing_income,
@@ -955,13 +984,13 @@ def show_budget():  # Displays the user's budget
     if b_label is None:
         return
     else:
-        if budbalance <= 60.0:
+        if budbalance < 60.0:
             return
-        elif 60.0 < budbalance <= 80.0:
+        elif 60.0 <= budbalance < 80.0:
             notifybudget60()
-        elif 80.0 < budbalance <= 95.0:
+        elif 80.0 <= budbalance < 95.0:
             notifybudget80()
-        elif 95.0 < budbalance < 100.0:
+        elif 95.0 <= budbalance < 100.0:
             notifybudget95()
         else:
             notifybudget100()
@@ -1150,11 +1179,13 @@ budget_entry = CTkEntry(master=mainframe1left, height=30, width=80)
 budget_entry.place(relx=0.5, rely=0.75, anchor='center')
 load_budget()
 
-addexpbut = CTkButton(master=mainframe1left, text='Add Expense', height=50, font=('Microsoft YaHei UI Light', 15),
+addexpbut = CTkButton(master=mainframe1left, text='Add Expense', height=50,
+                      font=('Microsoft YaHei UI Light', 15, 'bold'),
                       hover_color="#808080",
                       fg_color="#000000", command=addexp_frame)
 addexpbut.place(anchor='center', relx=0.5, rely=0.1)
-addincbut = CTkButton(master=mainframe1left, text='Add Income', height=50, font=('Microsoft YaHei UI Light', 15),
+addincbut = CTkButton(master=mainframe1left, text='Add Income', height=50,
+                      font=('Microsoft YaHei UI Light', 15, 'bold'),
                       hover_color="#808080", fg_color="#000000", command=addinc_frame)
 addincbut.place(anchor='center', relx=0.5, rely=0.2)
 
