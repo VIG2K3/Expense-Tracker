@@ -932,7 +932,10 @@ def show_budget():  # Displays the user's budget
     b_label = cursor3.fetchall()
     bud1 = sum(float(row[0]) for row in b_label)
 
-    budget_label.configure(text='Budget: RM {}'.format(bud1))
+    if bud1 == 0.0:
+        budget_label.configure(text='Set A Budget')
+    else:
+        budget_label.configure(text='Budget: RM {}'.format(bud1))
 
     cursor1.execute('SELECT Amount_EXP FROM Expenses WHERE User_ID = ?', (logged_in_user[0],))
     result10 = cursor1.fetchall()
