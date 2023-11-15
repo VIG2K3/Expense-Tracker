@@ -879,7 +879,7 @@ def load_budget():  # Loads the saved budget if there is one
                 mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
 
         budget_entry1.place(relx=0.5, rely=0.75, anchor='center')
-        editbudget_button = CTkButton(master=mainframe1left, text="Edit Budget", hover_color="#00456D",
+        editbudget_button = CTkButton(master=mainframe1left, text="Reset Budget", hover_color="#00456D",
                                       font=('Microsoft YaHei UI Light', 13, 'bold'),
                                       fg_color="#007CC2", command=edit_budget)
         editbudget_button.place(relx=0.5, rely=0.8, anchor='center')
