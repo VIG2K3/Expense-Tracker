@@ -1489,4 +1489,6 @@ money_app.mainloop()
 
 cursor1.close()
 cursor2.close()
+cursor3.close()
+cursor10.close()
 connector.close()
