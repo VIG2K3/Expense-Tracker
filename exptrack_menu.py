@@ -146,21 +146,23 @@ def register():  # Registers a new user into the system (SQLite DML)
     password = hash_password(register_username_password_entry.get())
     confirm_password = hash_password(register_confirm_password_entry.get())
     if username and password:
-        if password != confirm_password:
-            mb.showerror("Registration Error", "Passwords do not match.")
+        if username == 'Username':
+            mb.showerror("Registration Error", "Please enter both a username and password.")
         else:
-            try:
-                cursor10.execute('INSERT INTO Users (User_username, User_password) VALUES (?, ?)',
-                                 (username, password))
-                connector.commit()
-                mb.showinfo("Registration Successful", "You are now registered.")
-                register_username_entry.delete(0, END)
-                register_username_password_entry.delete(0, END)
-                register_confirm_password_entry.delete(0, END)
-                switch_to_login_page()
-            except sqlite3.IntegrityError:
-                mb.showerror("Registration Error", "Username already exists. Please choose another.")
-
+            if password != confirm_password:
+                mb.showerror("Registration Error", "Passwords do not match.")
+            else:
+                try:
+                    cursor10.execute('INSERT INTO Users (User_username, User_password) VALUES (?, ?)',
+                                     (username, password))
+                    connector.commit()
+                    mb.showinfo("Registration Successful", "You are now registered.")
+                    register_username_entry.delete(0, END)
+                    register_username_password_entry.delete(0, END)
+                    register_confirm_password_entry.delete(0, END)
+                    switch_to_login_page()
+                except sqlite3.IntegrityError:
+                    mb.showerror("Registration Error", "Username already exists. Please choose another.")
     else:
         mb.showerror("Registration Error", "Please enter both a username and password.")
 
