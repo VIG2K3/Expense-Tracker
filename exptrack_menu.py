@@ -502,7 +502,7 @@ def adding_expense():  # Adds a new expense
         if (not date_exp.get() or not payee.get() or not note_exp.get() or not amnt_exp.get()
                 or not MOP_exp.get() or not cate_exp.get()):
             mb.showerror('Fields empty!',
-                         "Please fill all missing fields before pressing the add button!")
+                         "Please fill all missing fields before pressing the save button!")
         else:
             (connector.execute('INSERT INTO Expenses (Date_EXP, Payee, Note_EXP, Amount_EXP, ModeOfPayment_EXP, '
                                'Category_EXP, User_ID)'
@@ -555,7 +555,7 @@ def edit_expense():  # Edits selected expense
             if (not date_exp.get() or not payee.get() or not note_exp.get() or not amnt_exp.get()
                     or not MOP_exp.get() or not cate_exp.get()):
                 mb.showerror('Empty Fields',
-                             "Please fill all the missing fields before adding!")
+                             "Please fill all the missing fields before saving the edit!")
             else:
                 connector.execute(
                     'UPDATE Expenses SET Date_EXP = ?, Payee = LTRIM(RTRIM(?)), Note_EXP = LTRIM(RTRIM(?)), '
@@ -710,7 +710,7 @@ def adding_income():  # Adds a new income
         if (not date_inc.get() or not payer.get() or not note_inc.get() or not amnt_inc.get()
                 or not MOP_inc.get() or not cate_inc.get()):
             mb.showerror('Empty Fields',
-                         "Please fill all missing fields before pressing the add button!")
+                         "Please fill all missing fields before pressing the save button!")
         else:
             # If all fields are filled, insert the data into the database
             connector.execute('INSERT INTO Income (Date_INC, Payer_INC, Note_INC, Amount_INC, '
@@ -779,7 +779,7 @@ def edit_income():  # Edits the selected income
             if (not date_inc.get() or not payer.get() or not note_inc.get() or not amnt_inc.get()
                     or not MOP_inc.get() or not cate_inc.get()):
                 mb.showerror('Empty Fields',
-                             "Please fill all missing fields before pressing the add button!")
+                             "Please fill all missing fields before saving the edit!")
             else:
 
                 connector.execute(
