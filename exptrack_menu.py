@@ -866,7 +866,7 @@ def load_budget():  # Loads the saved budget if there is one
         budget_button.destroy()
         show_budget()
 
-        def edit_budget():  # Edits the existing budget amount
+        def reset_budget():  # Resets the existing budget amount
             try:
                 budget_amount1 = int(budget_entry1.get())
                 if budget_amount1 <= 0:
@@ -881,10 +881,10 @@ def load_budget():  # Loads the saved budget if there is one
                 mb.showerror('Invalid Budget', 'Please enter a valid budget amount.')
 
         budget_entry1.place(relx=0.5, rely=0.75, anchor='center')
-        editbudget_button = CTkButton(master=mainframe1left, text="Reset Budget", hover_color="#00456D",
-                                      font=('Microsoft YaHei UI Light', 13, 'bold'),
-                                      fg_color="#007CC2", command=edit_budget)
-        editbudget_button.place(relx=0.5, rely=0.8, anchor='center')
+        resetbudget_button = CTkButton(master=mainframe1left, text="Reset Budget", hover_color="#00456D",
+                                       font=('Microsoft YaHei UI Light', 13, 'bold'),
+                                       fg_color="#007CC2", command=reset_budget)
+        resetbudget_button.place(relx=0.5, rely=0.8, anchor='center')
 
     def delete_budget():  # Deletes the user's budget
         cursor3.execute('SELECT Budget_amount FROM Budget WHERE User_ID = ?', (logged_in_user[0],))
